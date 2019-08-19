@@ -34,13 +34,13 @@ class UpdateDependencyMojo extends AbstractMojo {
         def latestParentVersion = versions.max().toString()
 
         // no changes
-        if (parent.version != latestParentVersion) return
+        if (parent.version == latestParentVersion) return
 
         // git checkout -b
         def git = Git.open(mavenProject.basedir)
         git.checkout().tap {
             createBranch = true
-            name = "continuous-dependency-update/$parent"
+            name = "continuous-dependency-update/${parent.groupId}-${parent.artifactId}-${parent.version}"
         }.call()
 
         def modifiedPom = new XmlParser(false, false).parse(mavenProject.file).tap {
@@ -59,8 +59,8 @@ class UpdateDependencyMojo extends AbstractMojo {
 
         // git commit
         git.commit().tap {
-            author = new PersonIdent('continuous-dependency-update', null)
-            message = "Bump ${parent.groupId}:${parent.artifactId} from $parent.version to $latestParentVersion"
+            author = new PersonIdent('continuous-dependency-update', '')
+            message = "Bump ${parent.groupId}-${parent.artifactId} from ${parent.version} to $latestParentVersion"
         }.call()
     }
 }
