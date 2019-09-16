@@ -1,13 +1,19 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.helpermethod</groupId>
-    <artifactId>continuous-dependency-update-maven-plugin</artifactId>
+    <artifactId>continuous-update-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
     <version>0.1.0</version>
+    <scm>
+        <connection>scm:git:https://git.meinestadt.de:common-services/foo-service.git</connection>
+        <developerConnection>scm:git:gitlab@git.meinestadt.de:common-services/foo-service.git
+        </developerConnection>
+    </scm>
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.2.0.M5</version>
+        <version>2.1.7.RELEASE</version>
         <relativePath/>
     </parent>
     <properties>

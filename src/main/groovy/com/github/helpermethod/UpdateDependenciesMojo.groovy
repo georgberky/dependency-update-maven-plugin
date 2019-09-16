@@ -1,30 +1,26 @@
 package com.github.helpermethod
 
-
 import org.apache.maven.artifact.factory.ArtifactFactory
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource
 import org.apache.maven.artifact.repository.ArtifactRepository
 import org.apache.maven.plugin.AbstractMojo
-import org.apache.maven.plugin.MojoExecutionException
-import org.apache.maven.plugin.MojoFailureException
 import org.apache.maven.plugins.annotations.Component
 import org.apache.maven.plugins.annotations.Mojo
 import org.apache.maven.plugins.annotations.Parameter
 import org.apache.maven.project.MavenProject
 import org.apache.maven.settings.Settings
 import org.eclipse.jgit.api.Git
-import org.eclipse.jgit.lib.BaseRepositoryBuilder
 import org.eclipse.jgit.lib.PersonIdent
-import org.eclipse.jgit.lib.Repository
 import org.eclipse.jgit.lib.RepositoryBuilder
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder
-import org.eclipse.jgit.transport.URIish
+import org.eclipse.jgit.transport.JschConfigSessionFactory
+import org.eclipse.jgit.transport.RefSpec
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 
-@Mojo(name = "update-dependency")
-class UpdateDependencyMojo extends AbstractMojo {
+@Mojo(name = "update-dependencies")
+class UpdateDependenciesMojo extends AbstractMojo {
     @Parameter(defaultValue = '${project}', readonly = true)
     MavenProject mavenProject
+
     @Parameter(defaultValue = '${localRepository}', readonly = true)
     ArtifactRepository localRepository
     @Parameter(defaultValue = '${project.remoteArtifactRepositories}', readonly = true)
@@ -45,7 +41,7 @@ class UpdateDependencyMojo extends AbstractMojo {
     @Component
     ArtifactFactory artifactFactory
 
-    void execute() throws MojoExecutionException, MojoFailureException {
+    void execute() {
         // update parent version
         def parent = artifactFactory.createParentArtifact(mavenProject.parent.groupId, mavenProject.parent.artifactId, mavenProject.parent.version)
         def versions = artifactMetadataSource.retrieveAvailableVersions(parent, localRepository, remoteArtifactRepositories)
@@ -54,12 +50,19 @@ class UpdateDependencyMojo extends AbstractMojo {
         // no changes
         if (parent.version == latestParentVersion) return
 
+        def git = new Git(
+            new RepositoryBuilder()
+                .readEnvironment()
+                .findGitDir(mavenProject.basedir)
+                .setMustExist(true)
+                .build()
+        )
+
         // git checkout -b
-        def git = Git.open(mavenProject.basedir)
-        git.checkout().tap {
-            createBranch = true
-            name = "continuous-dependency-update/${parent.groupId}-${parent.artifactId}-${latestParentVersion}"
-        }.call()
+        git.checkout()
+            .setCreateBranch(true)
+            .setName("continuous-dependency-update/${parent.groupId}-${parent.artifactId}-${latestParentVersion}")
+            .call()
 
         def modifiedPom = new XmlParser(false, false).parse(mavenProject.file).tap {
             children().find { it.name() == 'parent' }.version[0].value = latestParentVersion
@@ -69,7 +72,6 @@ class UpdateDependencyMojo extends AbstractMojo {
         mavenProject.file.withPrintWriter {
             new XmlNodePrinter(it, " " * 4).tap {
                 preserveWhitespace = true
-                expandEmptyElements
             }.print(modifiedPom)
         }
 
@@ -77,21 +79,38 @@ class UpdateDependencyMojo extends AbstractMojo {
         git.add().addFilepattern('pom.xml').call()
 
         // git commit
-        git.commit().tap {
-            author = new PersonIdent('continuous-dependency-update', '')
-            message = "Bump ${parent.artifactId} from ${parent.version} to $latestParentVersion"
-        }.call()
+        git.commit()
+            .setAuthor(new PersonIdent('continuous-update', ''))
+            .setMessage("Bump ${parent.artifactId} from ${parent.version} to $latestParentVersion")
+            .call()
 
-        def scm = new URIish(connectionType == 'developerConnection' ? developerConnectionUrl : connectionUrl)
+        // git push
+        git.push()
+            .setRefSpecs([new RefSpec("+/refs/head/continuous-dependency-update/${parent.groupId}-${parent.artifactId}-${latestParentVersion}:refs/remotes/origin/${parent.groupId}-${parent.artifactId}-${latestParentVersion}")])
+            .tap {
+                def connectionUri = (connection - 'scm:git').toURI()
 
-        git.remoteAdd().tap {
-            name = 'origin'
-            uri = scm
-        }.call()
+                switch (connectionUri.scheme) {
+                    case ~/https?/:
+                        def server = settings.getServer(connectionUri.host)
 
-        git.push().tap {
-            def server = settings.getServer(scm.host)
-            credentialsProvider = new UsernamePasswordCredentialsProvider(server.username, server.password)
-        }.call()
+                        credentialsProvider = new UsernamePasswordCredentialsProvider(server.username, server.password)
+
+                        break
+                    case 'ssh':
+                        transportConfigCallback = { transport ->
+                            transport.sshSessionFactory = { host, session -> } as JschConfigSessionFactory
+                        }
+
+                        break
+                    // TODO handle default
+                }
+            }
+            .setPushOptions(['merge_request.create'])
+            .call()
+    }
+
+    private def getConnection() {
+        connectionType == 'developerConnection' ? developerConnectionUrl : connectionUrl
     }
 }
