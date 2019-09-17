@@ -6,9 +6,8 @@
     <packaging>maven-plugin</packaging>
     <version>0.1.0</version>
     <scm>
-        <connection>scm:git:https://git.meinestadt.de:common-services/foo-service.git</connection>
-        <developerConnection>scm:git:gitlab@git.meinestadt.de:common-services/foo-service.git
-        </developerConnection>
+        <connection>scm:git:gitlab@git.meinestadt.de:common-services/foo-service.git</connection>
+        <developerConnection>scm:git:gitlab@git.meinestadt.de:common-services/foo-service.git</developerConnection>
     </scm>
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -39,9 +38,13 @@
         </dependency>
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
-            <artifactId>groovy-all</artifactId>
+            <artifactId>groovy</artifactId>
             <version>${groovy.version}</version>
-            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-xml</artifactId>
+            <version>2.5.7</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jgit</groupId>

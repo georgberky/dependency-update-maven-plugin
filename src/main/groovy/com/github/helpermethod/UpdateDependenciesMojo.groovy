@@ -1,5 +1,8 @@
 package com.github.helpermethod
 
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
+import groovy.transform.Immutable
 import org.apache.maven.artifact.factory.ArtifactFactory
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource
 import org.apache.maven.artifact.repository.ArtifactRepository
@@ -14,8 +17,11 @@ import org.eclipse.jgit.lib.PersonIdent
 import org.eclipse.jgit.lib.RepositoryBuilder
 import org.eclipse.jgit.transport.JschConfigSessionFactory
 import org.eclipse.jgit.transport.RefSpec
+import org.eclipse.jgit.transport.SshTransport
+import org.eclipse.jgit.transport.Transport
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 
+@CompileStatic
 @Mojo(name = "update-dependencies")
 class UpdateDependenciesMojo extends AbstractMojo {
     @Parameter(defaultValue = '${project}', readonly = true)
@@ -64,9 +70,7 @@ class UpdateDependenciesMojo extends AbstractMojo {
             .setName("continuous-dependency-update/${parent.groupId}-${parent.artifactId}-${latestParentVersion}")
             .call()
 
-        def modifiedPom = new XmlParser(false, false).parse(mavenProject.file).tap {
-            children().find { it.name() == 'parent' }.version[0].value = latestParentVersion
-        }
+        def modifiedPom = updatePom(latestParentVersion)
 
         // rewrite POM
         mavenProject.file.withPrintWriter {
@@ -92,14 +96,14 @@ class UpdateDependenciesMojo extends AbstractMojo {
 
                 switch (connectionUri.scheme) {
                     case ~/https?/:
-                        def server = settings.getServer(connectionUri.host)
+                        def credentials = getCredentials(connectionUri)
 
-                        credentialsProvider = new UsernamePasswordCredentialsProvider(server.username, server.password)
+                        setCredentialsProvider(new UsernamePasswordCredentialsProvider(credentials.username, credentials.password))
 
                         break
                     case 'ssh':
-                        transportConfigCallback = { transport ->
-                            transport.sshSessionFactory = { host, session -> } as JschConfigSessionFactory
+                        setTransportConfigCallback { Transport transport ->
+                            (transport as SshTransport).sshSessionFactory = { host, session -> } as JschConfigSessionFactory
                         }
 
                         break
@@ -110,7 +114,33 @@ class UpdateDependenciesMojo extends AbstractMojo {
             .call()
     }
 
-    private def getConnection() {
+    @CompileDynamic
+    private def updatePom(latestParentVersion) {
+        new XmlParser(false, false).parse(mavenProject.file).tap {
+            // TODO replace with list of callbacks
+            children().find { it.name() == 'parent' }.version[0].value = latestParentVersion
+        }
+    }
+
+    private String getConnection() {
         connectionType == 'developerConnection' ? developerConnectionUrl : connectionUrl
+    }
+
+    private Credentials getCredentials(URI connectionUri) {
+        if (connectionUri.userInfo) {
+            return connectionUri.userInfo.split(":").with {
+                new Credentials(it[0], it[1])
+            }
+        }
+
+        settings.getServer(connectionUri.host).with {
+            new Credentials(username, password)
+        }
+    }
+
+    @Immutable
+    private static class Credentials {
+        String username
+        String password
     }
 }
