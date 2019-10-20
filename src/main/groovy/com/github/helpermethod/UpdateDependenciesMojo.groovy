@@ -1,9 +1,5 @@
 package com.github.helpermethod
 
-import groovy.transform.CompileDynamic
-import groovy.transform.CompileStatic
-import groovy.transform.Immutable
-import org.apache.maven.artifact.factory.ArtifactFactory
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource
 import org.apache.maven.artifact.repository.ArtifactRepository
 import org.apache.maven.plugin.AbstractMojo
@@ -15,13 +11,8 @@ import org.apache.maven.settings.Settings
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.PersonIdent
 import org.eclipse.jgit.lib.RepositoryBuilder
-import org.eclipse.jgit.transport.JschConfigSessionFactory
-import org.eclipse.jgit.transport.RefSpec
-import org.eclipse.jgit.transport.SshTransport
-import org.eclipse.jgit.transport.Transport
-import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
+import org.eclipse.jgit.transport.*
 
-@CompileStatic
 @Mojo(name = "update-dependencies")
 class UpdateDependenciesMojo extends AbstractMojo {
     @Parameter(defaultValue = '${project}', readonly = true)
@@ -44,18 +35,55 @@ class UpdateDependenciesMojo extends AbstractMojo {
 
     @Component
     ArtifactMetadataSource artifactMetadataSource
-    @Component
-    ArtifactFactory artifactFactory
 
     void execute() {
-        // update parent version
-        def parent = artifactFactory.createParentArtifact(mavenProject.parent.groupId, mavenProject.parent.artifactId, mavenProject.parent.version)
-        def versions = artifactMetadataSource.retrieveAvailableVersions(parent, localRepository, remoteArtifactRepositories)
-        def latestParentVersion = versions.max().toString()
+        withGit { git ->
+            ([parentUpdate()] - null).each { update ->
+                git
+                    .checkout()
+                    .setCreateBranch(true)
+                    .setName("continuous-dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}")
+                    .call()
 
-        // no changes
-        if (parent.version == latestParentVersion) return
+                withPom(update.modification)
 
+                git
+                    .add()
+                    .addFilepattern('pom.xml')
+                    .call()
+
+                git
+                    .commit()
+                    .setAuthor(new PersonIdent('continuous-update-bot', ''))
+                    .setMessage("Bump ${update.artifactId} from ${update.currentVersion} to $update.latestVersion")
+                    .call()
+
+                git
+                    .push()
+                    .setRefSpecs(new RefSpec("+refs/heads/continuous-dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}:refs/remotes/origin/continuous-dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}"))
+                    .tap {
+                        def connectionUri = new URIish(connection - 'scm:git:')
+
+                        switch (connectionUri.scheme) {
+                            case ~/https/:
+                                def (username, password) = getCredentials(connectionUri)
+
+                                credentialsProvider = new UsernamePasswordCredentialsProvider(username, password)
+
+                                break
+                            default:
+                                transportConfigCallback = { transport ->
+                                    transport.sshSessionFactory = { host, session -> }
+                                }
+                        }
+                    }
+                    .setPushOptions(['merge_request.create'])
+                    .call()
+            }
+        }
+    }
+
+    def withGit(cl) {
         def git = new Git(
             new RepositoryBuilder()
                 .readEnvironment()
@@ -64,61 +92,18 @@ class UpdateDependenciesMojo extends AbstractMojo {
                 .build()
         )
 
-        // git checkout -b
-        git.checkout()
-            .setCreateBranch(true)
-            .setName("continuous-dependency-update/${parent.groupId}-${parent.artifactId}-${latestParentVersion}")
-            .call()
+        cl(git)
 
-        def modifiedPom = updatePom(latestParentVersion)
-
-        // rewrite POM
-        mavenProject.file.withPrintWriter {
-            new XmlNodePrinter(it, " " * 4).tap {
-                preserveWhitespace = true
-            }.print(modifiedPom)
-        }
-
-        // git add
-        git.add().addFilepattern('pom.xml').call()
-
-        // git commit
-        git.commit()
-            .setAuthor(new PersonIdent('continuous-update', ''))
-            .setMessage("Bump ${parent.artifactId} from ${parent.version} to $latestParentVersion")
-            .call()
-
-        // git push
-        git.push()
-            .setRefSpecs([new RefSpec("+/refs/head/continuous-dependency-update/${parent.groupId}-${parent.artifactId}-${latestParentVersion}:refs/remotes/origin/${parent.groupId}-${parent.artifactId}-${latestParentVersion}")])
-            .tap {
-                def connectionUri = (connection - 'scm:git').toURI()
-
-                switch (connectionUri.scheme) {
-                    case ~/https?/:
-                        def credentials = getCredentials(connectionUri)
-
-                        setCredentialsProvider(new UsernamePasswordCredentialsProvider(credentials.username, credentials.password))
-
-                        break
-                    case 'ssh':
-                        setTransportConfigCallback { Transport transport ->
-                            (transport as SshTransport).sshSessionFactory = { host, session -> } as JschConfigSessionFactory
-                        }
-
-                        break
-                    // TODO handle default
-                }
-            }
-            .setPushOptions(['merge_request.create'])
-            .call()
+        git.close()
     }
 
-    @CompileDynamic
-    private def updatePom(latestParentVersion) {
-        new XmlParser(false, false).parse(mavenProject.file).tap {
-            // TODO replace with list of callbacks
-            children().find { it.name() == 'parent' }.version[0].value = latestParentVersion
+    def withPom(cl) {
+        def pom = new XmlParser(false, false).parse(mavenProject.file)
+
+        cl(pom)
+
+        mavenProject.file.withPrintWriter {
+            new XmlNodePrinter(it, " " * 4).tap { preserveWhitespace = true }.print(pom)
         }
     }
 
@@ -126,21 +111,40 @@ class UpdateDependenciesMojo extends AbstractMojo {
         connectionType == 'developerConnection' ? developerConnectionUrl : connectionUrl
     }
 
-    private Credentials getCredentials(URI connectionUri) {
-        if (connectionUri.userInfo) {
-            return connectionUri.userInfo.split(":").with {
-                new Credentials(it[0], it[1])
-            }
-        }
+    private def getCredentials(URIish uri) {
+        uri.user ? [uri.user, uri.pass] : settings.getServer(uri.host).with { [it.username, it.password] }
+    }
 
-        settings.getServer(connectionUri.host).with {
-            new Credentials(username, password)
+    private def parentUpdate() {
+        if (!mavenProject.parentArtifact) return null
+
+        update(mavenProject.parentArtifact) { pom, version ->
+            pom.children().find { it.name() == 'parent' }.version[0].value = version
         }
     }
 
-    @Immutable
-    private static class Credentials {
-        String username
-        String password
+    private def dependencyUpdates() {
+        mavenProject.dependencyArtifacts.collect { artifact ->
+            update(artifact) { pom, version ->
+                pom.dependencies.dependency.find {
+                    it.artifactId == artifact.artifactId && it.groupId == artifact.groupId && it.version == artifact.version
+                }.version[0].value = version
+            }
+        }
+    }
+
+    private def update(artifact, modification) {
+        def versions = artifactMetadataSource.retrieveAvailableVersions(artifact, localRepository, remoteArtifactRepositories)
+        def latestVersion = versions.max() as String
+
+        if (artifact.version == latestVersion) return null
+
+        [
+            groupId: artifact.groupId,
+            artifactId: artifact.artifactId,
+            currentVersion: mavenProject.parentArtifact.version,
+            latestVersion: latestVersion,
+            modification: modification.rcurry(latestVersion)
+        ]
     }
 }
