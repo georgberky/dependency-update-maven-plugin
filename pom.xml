@@ -9,8 +9,8 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.version>3.6.1</maven.version>
-        <groovy.version>2.5.7</groovy.version>
-        <jgit.version>5.4.0.201906121030-r</jgit.version>
+        <groovy.version>2.5.8</groovy.version>
+        <jgit.version>5.5.1.201910021850-r</jgit.version>
     </properties>
 
     <dependencies>

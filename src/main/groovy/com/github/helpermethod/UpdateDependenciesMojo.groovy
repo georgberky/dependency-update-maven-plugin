@@ -1,5 +1,8 @@
 package com.github.helpermethod
 
+import com.jcraft.jsch.JSch
+import com.jcraft.jsch.JSchException
+import com.jcraft.jsch.Session
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource
 import org.apache.maven.artifact.repository.ArtifactRepository
 import org.apache.maven.plugin.AbstractMojo
@@ -9,9 +12,13 @@ import org.apache.maven.plugins.annotations.Parameter
 import org.apache.maven.project.MavenProject
 import org.apache.maven.settings.Settings
 import org.eclipse.jgit.api.Git
+import org.eclipse.jgit.api.TransportConfigCallback
 import org.eclipse.jgit.lib.PersonIdent
 import org.eclipse.jgit.lib.RepositoryBuilder
 import org.eclipse.jgit.transport.*
+import org.eclipse.jgit.util.FS
+
+import static org.eclipse.jgit.transport.OpenSshConfig.*
 
 @Mojo(name = "update-dependencies")
 class UpdateDependenciesMojo extends AbstractMojo {
@@ -37,10 +44,11 @@ class UpdateDependenciesMojo extends AbstractMojo {
     ArtifactMetadataSource artifactMetadataSource
 
     void execute() {
-        withGit { git ->
-            ([parentUpdate()] - null).each { update ->
+        withGit { git, head ->
+            [this.&parentUpdate].findResults { it() }.each { update ->
                 git
                     .checkout()
+                    .setStartPoint(head)
                     .setCreateBranch(true)
                     .setName("continuous-dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}")
                     .call()
@@ -60,21 +68,34 @@ class UpdateDependenciesMojo extends AbstractMojo {
 
                 git
                     .push()
-                    .setRefSpecs(new RefSpec("+refs/heads/continuous-dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}:refs/remotes/origin/continuous-dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}"))
+                    .setRefSpecs(new RefSpec("continuous-dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}:continuous-dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}"))
                     .tap {
                         def connectionUri = new URIish(connection - 'scm:git:')
 
                         switch (connectionUri.scheme) {
-                            case ~/https/:
+                            case 'https':
                                 def (username, password) = getCredentials(connectionUri)
 
-                                credentialsProvider = new UsernamePasswordCredentialsProvider(username, password)
+                                setCredentialsProvider(new UsernamePasswordCredentialsProvider(username, password))
 
                                 break
                             default:
-                                transportConfigCallback = { transport ->
-                                    transport.sshSessionFactory = { host, session -> }
-                                }
+                                setTransportConfigCallback(new TransportConfigCallback() {
+                                    void configure(Transport transport) {
+                                        ((SshTransport)transport).sshSessionFactory = new JschConfigSessionFactory() {
+                                            @Override
+                                            protected JSch createDefaultJSch(FS fs) throws JSchException {
+                                                super.createDefaultJSch(fs).tap {
+                                                    addIdentity('/Users/oliver.weiler/.ssh/id_rsa', 'p0lyfr4g')
+                                                }
+                                            }
+
+                                            protected void configure(Host host, Session session) {
+                                                // NOOP
+                                            }
+                                        }
+                                    }
+                                })
                         }
                     }
                     .setPushOptions(['merge_request.create'])
@@ -92,7 +113,7 @@ class UpdateDependenciesMojo extends AbstractMojo {
                 .build()
         )
 
-        cl(git)
+        cl(git, git.repository.fullBranch)
 
         git.close()
     }
@@ -118,14 +139,14 @@ class UpdateDependenciesMojo extends AbstractMojo {
     private def parentUpdate() {
         if (!mavenProject.parentArtifact) return null
 
-        update(mavenProject.parentArtifact) { pom, version ->
+        update(mavenProject.parentArtifact) { version, pom ->
             pom.children().find { it.name() == 'parent' }.version[0].value = version
         }
     }
 
     private def dependencyUpdates() {
         mavenProject.dependencyArtifacts.collect { artifact ->
-            update(artifact) { pom, version ->
+            update(artifact) { version, pom ->
                 pom.dependencies.dependency.find {
                     it.artifactId == artifact.artifactId && it.groupId == artifact.groupId && it.version == artifact.version
                 }.version[0].value = version
@@ -135,7 +156,7 @@ class UpdateDependenciesMojo extends AbstractMojo {
 
     private def update(artifact, modification) {
         def versions = artifactMetadataSource.retrieveAvailableVersions(artifact, localRepository, remoteArtifactRepositories)
-        def latestVersion = versions.max() as String
+        def latestVersion = versions.max().toString()
 
         if (artifact.version == latestVersion) return null
 
@@ -144,7 +165,7 @@ class UpdateDependenciesMojo extends AbstractMojo {
             artifactId: artifact.artifactId,
             currentVersion: mavenProject.parentArtifact.version,
             latestVersion: latestVersion,
-            modification: modification.rcurry(latestVersion)
+            modification: modification.curry(latestVersion)
         ]
     }
 }
