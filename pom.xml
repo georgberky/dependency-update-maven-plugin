@@ -5,12 +5,36 @@
     <artifactId>continuous-update-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
     <version>0.1.0</version>
+    <name>${project.groupId}:${project.artifactId}</name>
+    <description>The Continuous Update Plugin creates merge requests for dependency updates.</description>
+    <url>https://github.com/helpermethod/continuous-update-maven-plugin</url>
+
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>Oliver Weiler</name>
+            <email>wo6980@gmail.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/helpermethod/continuous-update-maven-plugin.git</connection>
+        <developerConnection>scm:git:https://github.com/helpermethod/continuous-update-maven-plugin.git</developerConnection>
+        <url>https://github.com/helpermethod/continuous-update-maven-plugin</url>
+    </scm>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.version>3.6.1</maven.version>
+        <maven.version>3.6.2</maven.version>
         <groovy.version>2.5.8</groovy.version>
         <jgit.version>5.5.1.201910021850-r</jgit.version>
+        <gmavenplus-plugin.version>1.8.0</gmavenplus-plugin.version>
     </properties>
 
     <dependencies>
@@ -63,7 +87,7 @@
             <plugin>
                 <groupId>org.codehaus.gmavenplus</groupId>
                 <artifactId>gmavenplus-plugin</artifactId>
-                <version>1.8.0</version>
+                <version>${gmavenplus-plugin.version}</version>
                 <executions>
                     <execution>
                         <goals>
