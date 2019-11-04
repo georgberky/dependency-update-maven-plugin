@@ -125,7 +125,6 @@
                 <version>${maven-source-plugin.version}</version>
                 <executions>
                     <execution>
-                        <phase>verify</phase>
                         <goals>
                             <goal>jar-no-fork</goal>
                         </goals>
@@ -138,7 +137,6 @@
                 <version>${maven-gpg-plugin.version}</version>
                 <executions>
                     <execution>
-                        <phase>verify</phase>
                         <goals>
                             <goal>sign</goal>
                         </goals>
