@@ -5,8 +5,9 @@
     <artifactId>continuous-update-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
     <version>0.1.0</version>
+
     <name>${project.groupId}:${project.artifactId}</name>
-    <description>The Continuous Update Plugin creates merge requests for dependency updates.</description>
+    <description>The Continuous Update Maven Plugin creates merge requests for dependency updates.</description>
     <url>https://github.com/helpermethod/continuous-update-maven-plugin</url>
 
     <licenses>
@@ -25,16 +26,31 @@
 
     <scm>
         <connection>scm:git:https://github.com/helpermethod/continuous-update-maven-plugin.git</connection>
-        <developerConnection>scm:git:https://github.com/helpermethod/continuous-update-maven-plugin.git</developerConnection>
+        <developerConnection>scm:git:https://github.com/helpermethod/continuous-update-maven-plugin.git
+        </developerConnection>
         <url>https://github.com/helpermethod/continuous-update-maven-plugin</url>
     </scm>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.version>3.6.2</maven.version>
+        <maven-plugin.version>3.6.0</maven-plugin.version>
         <groovy.version>2.5.8</groovy.version>
         <jgit.version>5.5.1.201910021850-r</jgit.version>
         <gmavenplus-plugin.version>1.8.0</gmavenplus-plugin.version>
+        <maven-source-plugin.version>3.2.0</maven-source-plugin.version>
+        <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
     </properties>
 
     <dependencies>
@@ -53,7 +69,7 @@
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
-            <version>3.6.0</version>
+            <version>${maven-plugin.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -64,6 +80,11 @@
         <dependency>
             <groupId>org.codehaus.groovy</groupId>
             <artifactId>groovy-xml</artifactId>
+            <version>${groovy.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-groovydoc</artifactId>
             <version>${groovy.version}</version>
         </dependency>
         <dependency>
@@ -79,7 +100,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-plugin-plugin</artifactId>
-                    <version>3.6.0</version>
+                    <version>${maven-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -91,7 +112,35 @@
                 <executions>
                     <execution>
                         <goals>
+                            <goal>addSources</goal>
                             <goal>compile</goal>
+                            <goal>groovydoc-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>${maven-source-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>${maven-gpg-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
                         </goals>
                     </execution>
                 </executions>
