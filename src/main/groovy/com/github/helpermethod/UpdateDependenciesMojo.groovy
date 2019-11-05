@@ -49,7 +49,8 @@ class UpdateDependenciesMojo extends AbstractMojo {
 
     void execute() {
         withGit { git, head ->
-            ([this.&parentUpdate(), this.&dependencyUpdates()] - null)
+            [this.&parentUpdate, this.&dependencyUpdates]
+                .findResults { it() }
                 .flatten()
                 .each { update ->
                     git
@@ -68,7 +69,7 @@ class UpdateDependenciesMojo extends AbstractMojo {
 
                     git
                         .commit()
-                        .setAuthor(new PersonIdent('continuous-update-bot', ''))
+                        .setAuthor(new PersonIdent('continuous-dependency-update-bot', ''))
                         .setMessage("Bump ${update.artifactId} from ${update.currentVersion} to $update.latestVersion")
                         .call()
 
@@ -86,7 +87,7 @@ class UpdateDependenciesMojo extends AbstractMojo {
 
                                     break
                                 default:
-                                    def (privateKey, passPhrase) = getPublicKeyCredentials(connectionUri)
+                                    def (privatekey, passphrase) = getPublicKeyCredentials(connectionUri)
 
                                     transportConfigCallback = new TransportConfigCallback() {
                                         void configure(Transport transport) {
@@ -94,7 +95,7 @@ class UpdateDependenciesMojo extends AbstractMojo {
                                                 @Override
                                                 protected JSch createDefaultJSch(FS fs) throws JSchException {
                                                     super.createDefaultJSch(fs).tap {
-                                                        addIdentity(privateKey, passPhrase)
+                                                        addIdentity(privatekey, passphrase)
                                                     }
                                                 }
 
