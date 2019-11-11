@@ -3,6 +3,7 @@ package com.github.helpermethod
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.JSchException
 import com.jcraft.jsch.Session
+import org.apache.maven.artifact.factory.ArtifactFactory
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource
 import org.apache.maven.artifact.repository.ArtifactRepository
 import org.apache.maven.plugin.AbstractMojo
@@ -22,6 +23,7 @@ import org.eclipse.jgit.transport.URIish
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.eclipse.jgit.util.FS
 
+import static org.eclipse.jgit.api.ListBranchCommand.ListMode.REMOTE
 import static org.eclipse.jgit.transport.OpenSshConfig.Host
 
 @Mojo(name = "update-dependencies")
@@ -41,86 +43,94 @@ class UpdateDependenciesMojo extends AbstractMojo {
     String developerConnectionUrl
     @Parameter(property = "connectionType", defaultValue = 'connection')
     String connectionType
-    @Parameter(property = 'allowSnapshots', defaultValue = 'false')
-    boolean allowSnapshots
 
     @Component
+    ArtifactFactory artifactFactory
+    @Component
     ArtifactMetadataSource artifactMetadataSource
+
 
     void execute() {
         withGit { git, head ->
             [this.&parentUpdate, this.&dependencyUpdates]
-                .findResults { it() }
-                .flatten()
-                .each { update ->
-                    git
-                        .checkout()
-                        .setStartPoint(head)
-                        .setCreateBranch(true)
-                        .setName("continuous-dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}")
-                        .call()
+                    .findResults { it() }
+                    .flatten()
+                    .each { update ->
+                        def branchname = "dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}"
 
-                    withPom(update.modification)
+                        if (git.branchList().setListMode(REMOTE).call().find { it == branchname }) {
+                            log.info("Remote branch $branchname already exists.")
 
-                    git
-                        .add()
-                        .addFilepattern('pom.xml')
-                        .call()
+                            return
+                        }
 
-                    git
-                        .commit()
-                        .setAuthor(new PersonIdent('continuous-dependency-update-bot', ''))
-                        .setMessage("Bump ${update.artifactId} from ${update.currentVersion} to $update.latestVersion")
-                        .call()
+                        git
+                            .checkout()
+                            .setStartPoint(head)
+                            .setCreateBranch(true)
+                            .setName(branchname)
+                            .call()
 
-                    git
-                        .push()
-                        .setRefSpecs(new RefSpec("continuous-dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}:continuous-dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}"))
-                        .tap {
-                            def connectionUri = new URIish(connection - 'scm:git:')
+                        withPom(update.modification)
 
-                            switch (connectionUri.scheme) {
-                                case 'https':
-                                    def (username, password) = getUsernamePasswordCredentials(connectionUri)
+                        git
+                            .add()
+                            .addFilepattern('pom.xml')
+                            .call()
 
-                                    credentialsProvider = new UsernamePasswordCredentialsProvider(username, password)
+                        git
+                            .commit()
+                            .setAuthor(new PersonIdent('dependency-update-bot', ''))
+                            .setMessage("Bump $update.artifactId from $update.currentVersion to $update.latestVersion")
+                            .call()
 
-                                    break
-                                default:
-                                    def (privatekey, passphrase) = getPublicKeyCredentials(connectionUri)
+                        git
+                            .push()
+                            .setRefSpecs(new RefSpec("dependency-update/$branchname:continuous-dependency-update/$branchname"))
+                            .tap {
+                                def connectionUri = new URIish(connection - 'scm:git:')
 
-                                    transportConfigCallback = new TransportConfigCallback() {
-                                        void configure(Transport transport) {
-                                            transport.sshSessionFactory = new JschConfigSessionFactory() {
-                                                @Override
-                                                protected JSch createDefaultJSch(FS fs) throws JSchException {
-                                                    super.createDefaultJSch(fs).tap {
-                                                        addIdentity(privatekey, passphrase)
+                                switch (connectionUri.scheme) {
+                                    case 'https':
+                                        def (username, password) = getUsernamePasswordCredentials(connectionUri)
+
+                                        credentialsProvider = new UsernamePasswordCredentialsProvider(username, password)
+
+                                        break
+                                    default:
+                                        def (privateKey, passphrase) = getPublicKeyCredentials(connectionUri)
+
+                                        transportConfigCallback = new TransportConfigCallback() {
+                                            void configure(Transport transport) {
+                                                transport.sshSessionFactory = new JschConfigSessionFactory() {
+                                                    @Override
+                                                    protected JSch createDefaultJSch(FS fs) throws JSchException {
+                                                        super.createDefaultJSch(fs).tap { addIdentity(privateKey, passphrase) }
                                                     }
-                                                }
 
-                                                protected void configure(Host host, Session session) {
-                                                    // NOOP
+                                                    protected void configure(Host host, Session session) {
+                                                        // NOOP
+                                                    }
                                                 }
                                             }
                                         }
-                                    }
+                                }
                             }
-                        }
-                        .setPushOptions(['merge_request.create'])
-                        .call()
-                }
+                            .setPushOptions(['merge_request.create'])
+                            .call()
+                    }
         }
     }
 
     def withGit(cl) {
-        def git = new Git(
-            new RepositoryBuilder()
-                .readEnvironment()
-                .findGitDir(mavenProject.basedir)
-                .setMustExist(true)
-                .build()
-        )
+        def git =
+            new Git(
+                new RepositoryBuilder()
+                    .readEnvironment()
+                    .findGitDir(mavenProject.basedir)
+                    .setMustExist(true)
+                    .build()
+            )
 
         cl(git, git.repository.fullBranch)
 
@@ -133,7 +143,9 @@ class UpdateDependenciesMojo extends AbstractMojo {
         cl(pom)
 
         mavenProject.file.withPrintWriter {
-            new XmlNodePrinter(it, " " * 4).tap { preserveWhitespace = true }.print(pom)
+            new XmlNodePrinter(it, " " * 4)
+                .tap { preserveWhitespace = true }
+                .print(pom)
         }
     }
 
@@ -150,7 +162,7 @@ class UpdateDependenciesMojo extends AbstractMojo {
     }
 
     private def parentUpdate() {
-        if (!mavenProject.parentArtifact) return []
+        if (!mavenProject.parentArtifact) return null
 
         update(mavenProject.parentArtifact) { version, pom ->
             pom.children().find { it.name() == 'parent' }.version[0].value = version
@@ -158,18 +170,30 @@ class UpdateDependenciesMojo extends AbstractMojo {
     }
 
     private def dependencyUpdates() {
-        mavenProject.dependencyArtifacts.findResults { artifact ->
-            update(artifact) { version, pom ->
-                pom.dependencies.dependency.find {
-                    it.artifactId == artifact.artifactId && it.groupId == artifact.groupId && it.version == artifact.version
-                }.version[0].value = version
+        mavenProject.originalModel.dependencies
+            .findAll(this.&isConcrete)
+            .collect(this.&createDependencyArtifact)
+            .findResults { artifact ->
+                update(artifact) { version, pom ->
+                    pom.dependencies.dependency.find(this.&isSame.curry(artifact)).version[0].value = version
+                }
             }
-        }
+    }
+
+    private static def isSame(artifact, dependency) {
+        dependency.artifactId.text() == artifact.artifactId && dependency.groupId.text() == artifact.groupId && dependency.version.text() == artifact.version
+    }
+
+    private static def isConcrete(dependency) {
+        dependency.version && !(dependency.version =~ /\$\{[^}]+}/)
+    }
+
+    private def createDependencyArtifact(dependency) {
+        artifactFactory.createDependencyArtifact(dependency.groupId, dependency.artifactId, createFromVersionSpec(dependency.version), dependency.type, dependency.classifier, dependency.scope, dependency.optional)
     }
 
     private def update(artifact, modification) {
-        def versions = artifactMetadataSource.retrieveAvailableVersions(artifact, localRepository, remoteArtifactRepositories)
-        def latestVersion = versions.findAll { it.qualifier != 'SNAPSHOT' }.max().toString()
+        def latestVersion = getLatestVersion(artifact)
 
         if (artifact.version == latestVersion) return null
 
@@ -180,5 +204,13 @@ class UpdateDependenciesMojo extends AbstractMojo {
             latestVersion : latestVersion,
             modification  : modification.curry(latestVersion)
         ]
+    }
+
+    private def getLatestVersion(artifact) {
+        artifactMetadataSource
+            .retrieveAvailableVersions(artifact, localRepository, remoteArtifactRepositories)
+            .findAll { it.qualifier != 'SNAPSHOT' }
+            .max()
+            .toString()
     }
 }

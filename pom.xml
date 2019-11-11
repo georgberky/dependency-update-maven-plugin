@@ -4,7 +4,7 @@
     <groupId>com.github.helpermethod</groupId>
     <artifactId>continuous-update-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>The Continuous Update Maven Plugin creates merge requests for dependency updates.</description>
@@ -51,6 +51,7 @@
         <gmavenplus-plugin.version>1.8.0</gmavenplus-plugin.version>
         <maven-source-plugin.version>3.2.0</maven-source-plugin.version>
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
+        <nexus-staging-plugin.version>1.6.8</nexus-staging-plugin.version>
     </properties>
 
     <dependencies>
@@ -114,7 +115,6 @@
                         <goals>
                             <goal>addSources</goal>
                             <goal>compile</goal>
-                            <goal>groovydoc-jar</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -152,7 +152,7 @@
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.8</version>
+                <version>${nexus-staging-maven-plugin.version}</version>
                 <extensions>true</extensions>
                 <configuration>
                     <serverId>ossrh</serverId>
