@@ -3,6 +3,7 @@ package com.github.helpermethod
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.JSchException
 import com.jcraft.jsch.Session
+import org.apache.maven.artifact.Artifact
 import org.apache.maven.artifact.factory.ArtifactFactory
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource
 import org.apache.maven.artifact.repository.ArtifactRepository
@@ -23,11 +24,12 @@ import org.eclipse.jgit.transport.URIish
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.eclipse.jgit.util.FS
 
+import static org.apache.maven.artifact.versioning.VersionRange.createFromVersionSpec
 import static org.eclipse.jgit.api.ListBranchCommand.ListMode.REMOTE
 import static org.eclipse.jgit.transport.OpenSshConfig.Host
 
-@Mojo(name = "update-dependencies")
-class UpdateDependenciesMojo extends AbstractMojo {
+@Mojo(name = "perform")
+class PerformDependencyUpdateMojo extends AbstractMojo {
     @Parameter(defaultValue = '${project}', readonly = true)
     MavenProject mavenProject
     @Parameter(defaultValue = '${localRepository}', readonly = true)
@@ -49,17 +51,16 @@ class UpdateDependenciesMojo extends AbstractMojo {
     @Component
     ArtifactMetadataSource artifactMetadataSource
 
-
     void execute() {
         withGit { git, head ->
             [this.&parentUpdate, this.&dependencyUpdates]
                     .findResults { it() }
                     .flatten()
                     .each { update ->
-                        def branchname = "dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}"
+                        def branchName = "dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}"
 
-                        if (git.branchList().setListMode(REMOTE).call().find { it == branchname }) {
-                            log.info("Remote branch $branchname already exists.")
+                        if (git.branchList().setListMode(REMOTE).call().find { it.name == "refs/remotes/origin/$branchName" }) {
+                            log.info("Merge request for $branchName already exists.")
 
                             return
                         }
@@ -68,7 +69,7 @@ class UpdateDependenciesMojo extends AbstractMojo {
                             .checkout()
                             .setStartPoint(head)
                             .setCreateBranch(true)
-                            .setName(branchname)
+                            .setName(branchName)
                             .call()
 
                         withPom(update.modification)
@@ -86,7 +87,7 @@ class UpdateDependenciesMojo extends AbstractMojo {
 
                         git
                             .push()
-                            .setRefSpecs(new RefSpec("dependency-update/$branchname:continuous-dependency-update/$branchname"))
+                            .setRefSpecs(new RefSpec("$branchName:$branchName"))
                             .tap {
                                 def connectionUri = new URIish(connection - 'scm:git:')
 
@@ -123,14 +124,13 @@ class UpdateDependenciesMojo extends AbstractMojo {
     }
 
     def withGit(cl) {
-        def git =
-            new Git(
-                new RepositoryBuilder()
-                    .readEnvironment()
-                    .findGitDir(mavenProject.basedir)
-                    .setMustExist(true)
-                    .build()
-            )
+        def git = new Git(
+            new RepositoryBuilder()
+                .readEnvironment()
+                .findGitDir(mavenProject.basedir)
+                .setMustExist(true)
+                .build()
+        )
 
         cl(git, git.repository.fullBranch)
 
@@ -192,7 +192,7 @@ class UpdateDependenciesMojo extends AbstractMojo {
         artifactFactory.createDependencyArtifact(dependency.groupId, dependency.artifactId, createFromVersionSpec(dependency.version), dependency.type, dependency.classifier, dependency.scope, dependency.optional)
     }
 
-    private def update(artifact, modification) {
+    private def update(Artifact artifact, Closure modification) {
         def latestVersion = getLatestVersion(artifact)
 
         if (artifact.version == latestVersion) return null
@@ -206,7 +206,7 @@ class UpdateDependenciesMojo extends AbstractMojo {
         ]
     }
 
-    private def getLatestVersion(artifact) {
+    private def getLatestVersion(Artifact artifact) {
         artifactMetadataSource
             .retrieveAvailableVersions(artifact, localRepository, remoteArtifactRepositories)
             .findAll { it.qualifier != 'SNAPSHOT' }
