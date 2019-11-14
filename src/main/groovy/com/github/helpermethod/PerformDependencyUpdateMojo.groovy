@@ -53,7 +53,7 @@ class PerformDependencyUpdateMojo extends AbstractMojo {
 
     void execute() {
         withGit { git, head ->
-            [this.&parentUpdate, this.&dependencyUpdates]
+            [this.&parentUpdate, this.&dependencyManagementUpdates, this.&dependencyUpdates]
                     .findResults { it() }
                     .flatten()
                     .each { update ->
@@ -169,18 +169,29 @@ class PerformDependencyUpdateMojo extends AbstractMojo {
         }
     }
 
+    private def dependencyManagementUpdates() {
+        mavenProject.dependencyManagement.dependencies
+            .findAll(this.&isConcrete)
+            .collect(this.&createDependencyArtifact)
+            .findResults { artifact ->
+                update(artifact) { version, pom ->
+                    pom.dependencyManagement.dependencies.dependency.find { isSame(dependency, artifact) }.version[0].value = version
+                }
+            }
+    }
+
     private def dependencyUpdates() {
         mavenProject.originalModel.dependencies
             .findAll(this.&isConcrete)
             .collect(this.&createDependencyArtifact)
             .findResults { artifact ->
                 update(artifact) { version, pom ->
-                    pom.dependencies.dependency.find(this.&isSame.curry(artifact)).version[0].value = version
+                    pom.dependencies.dependency.find { isSame(dependency, artifact) }.version[0].value = version
                 }
             }
     }
 
-    private static def isSame(artifact, dependency) {
+    private static def isSame(dependency, artifact) {
         dependency.artifactId.text() == artifact.artifactId && dependency.groupId.text() == artifact.groupId && dependency.version.text() == artifact.version
     }
 
