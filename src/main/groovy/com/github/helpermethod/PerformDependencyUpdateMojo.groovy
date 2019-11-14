@@ -170,7 +170,7 @@ class PerformDependencyUpdateMojo extends AbstractMojo {
     }
 
     private def dependencyManagementUpdates() {
-        mavenProject.dependencyManagement.dependencies
+        mavenProject.originalModel.dependencyManagement.dependencies
             .findAll(this.&isConcrete)
             .collect(this.&createDependencyArtifact)
             .findResults { artifact ->
