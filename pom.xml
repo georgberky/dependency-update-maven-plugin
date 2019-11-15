@@ -7,7 +7,7 @@
     <version>0.2.0</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
-    <description>The Dependency Update Maven Plugin creates merge requests for dependency updates.</description>
+    <description>The Dependency Update Maven plugin creates merge requests for dependency updates.</description>
     <url>https://github.com/helpermethod/dependency-update-maven-plugin</url>
 
     <licenses>
