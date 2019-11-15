@@ -29,7 +29,7 @@ import static org.eclipse.jgit.api.ListBranchCommand.ListMode.REMOTE
 import static org.eclipse.jgit.transport.OpenSshConfig.Host
 
 @Mojo(name = "perform")
-class PerformDependencyUpdateMojo extends AbstractMojo {
+class PerformMojo extends AbstractMojo {
     @Parameter(defaultValue = '${project}', readonly = true)
     MavenProject mavenProject
     @Parameter(defaultValue = '${localRepository}', readonly = true)
