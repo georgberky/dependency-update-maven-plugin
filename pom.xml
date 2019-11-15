@@ -48,7 +48,7 @@
         <maven-plugin.version>3.6.0</maven-plugin.version>
         <groovy.version>2.5.8</groovy.version>
         <jgit.version>5.5.1.201910021850-r</jgit.version>
-        <gmavenplus-plugin.version>1.8.0</gmavenplus-plugin.version>
+        <gmavenplus-plugin.version>1.8.1</gmavenplus-plugin.version>
         <maven-source-plugin.version>3.2.0</maven-source-plugin.version>
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
         <nexus-staging-plugin.version>1.6.8</nexus-staging-plugin.version>
