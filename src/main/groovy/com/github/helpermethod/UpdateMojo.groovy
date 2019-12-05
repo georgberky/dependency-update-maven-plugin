@@ -28,8 +28,8 @@ import static org.apache.maven.artifact.versioning.VersionRange.createFromVersio
 import static org.eclipse.jgit.api.ListBranchCommand.ListMode.REMOTE
 import static org.eclipse.jgit.transport.OpenSshConfig.Host
 
-@Mojo(name = "perform")
-class PerformMojo extends AbstractMojo {
+@Mojo(name = "update")
+class UpdateMojo extends AbstractMojo {
     @Parameter(defaultValue = '${project}', readonly = true)
     MavenProject mavenProject
     @Parameter(defaultValue = '${localRepository}', readonly = true)
@@ -54,72 +54,72 @@ class PerformMojo extends AbstractMojo {
     void execute() {
         withGit { git, head ->
             [this.&parentUpdate, this.&dependencyManagementUpdates, this.&dependencyUpdates]
-                    .findResults { it() }
-                    .flatten()
-                    .each { update ->
-                        def branchName = "dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}"
+                .findResults { it() }
+                .flatten()
+                .each { update ->
+                    def branchName = "dependency-update/${update.groupId}-${update.artifactId}-${update.latestVersion}"
 
-                        if (git.branchList().setListMode(REMOTE).call().find { it.name == "refs/remotes/origin/$branchName" }) {
-                            log.info("Merge request for $branchName already exists.")
+                    if (git.branchList().setListMode(REMOTE).call().find { it.name == "refs/remotes/origin/$branchName" }) {
+                        log.info("Merge request for $branchName already exists.")
 
-                            return
-                        }
+                        return
+                    }
 
-                        git
-                            .checkout()
-                            .setStartPoint(head)
-                            .setCreateBranch(true)
-                            .setName(branchName)
-                            .call()
+                    git
+                        .checkout()
+                        .setStartPoint(head)
+                        .setCreateBranch(true)
+                        .setName(branchName)
+                        .call()
 
-                        withPom(update.modification)
+                    withPom(update.modification)
 
-                        git
-                            .add()
-                            .addFilepattern('pom.xml')
-                            .call()
+                    git
+                        .add()
+                        .addFilepattern('pom.xml')
+                        .call()
 
-                        git
-                            .commit()
-                            .setAuthor(new PersonIdent('dependency-update-bot', ''))
-                            .setMessage("Bump $update.artifactId from $update.currentVersion to $update.latestVersion")
-                            .call()
+                    git
+                        .commit()
+                        .setAuthor(new PersonIdent('dependency-update-bot', ''))
+                        .setMessage("Bump $update.artifactId from $update.currentVersion to $update.latestVersion")
+                        .call()
 
-                        git
-                            .push()
-                            .setRefSpecs(new RefSpec("$branchName:$branchName"))
-                            .tap {
-                                def connectionUri = new URIish(connection - 'scm:git:')
+                    git
+                        .push()
+                        .setRefSpecs(new RefSpec("$branchName:$branchName"))
+                        .tap {
+                            def connectionUri = new URIish(connection - 'scm:git:')
 
-                                switch (connectionUri.scheme) {
-                                    case 'https':
-                                        def (username, password) = getUsernamePasswordCredentials(connectionUri)
+                            switch (connectionUri.scheme) {
+                                case 'https':
+                                    def (username, password) = getUsernamePasswordCredentials(connectionUri)
 
-                                        credentialsProvider = new UsernamePasswordCredentialsProvider(username, password)
+                                    credentialsProvider = new UsernamePasswordCredentialsProvider(username, password)
 
-                                        break
-                                    default:
-                                        def (privateKey, passphrase) = getPublicKeyCredentials(connectionUri)
+                                    break
+                                default:
+                                    def (privateKey, passphrase) = getPublicKeyCredentials(connectionUri)
 
-                                        transportConfigCallback = new TransportConfigCallback() {
-                                            void configure(Transport transport) {
-                                                transport.sshSessionFactory = new JschConfigSessionFactory() {
-                                                    @Override
-                                                    protected JSch createDefaultJSch(FS fs) throws JSchException {
-                                                        super.createDefaultJSch(fs).tap { addIdentity(privateKey, passphrase) }
-                                                    }
+                                    transportConfigCallback = new TransportConfigCallback() {
+                                        void configure(Transport transport) {
+                                            transport.sshSessionFactory = new JschConfigSessionFactory() {
+                                                @Override
+                                                protected JSch createDefaultJSch(FS fs) throws JSchException {
+                                                    super.createDefaultJSch(fs).tap { addIdentity(privateKey, passphrase) }
+                                                }
 
-                                                    protected void configure(Host host, Session session) {
-                                                        // NOOP
-                                                    }
+                                                protected void configure(Host host, Session session) {
+                                                    // NOOP
                                                 }
                                             }
                                         }
-                                }
+                                    }
                             }
-                            .setPushOptions(['merge_request.create'])
-                            .call()
-                    }
+                        }
+                        .setPushOptions(['merge_request.create'])
+                        .call()
+                }
         }
     }
 
@@ -170,12 +170,12 @@ class PerformMojo extends AbstractMojo {
     }
 
     private def dependencyManagementUpdates() {
-        mavenProject.originalModel.dependencyManagement.dependencies
+        (mavenProject.originalModel.dependencyManagement?.dependencies ?: [])
             .findAll(this.&isConcrete)
             .collect(this.&createDependencyArtifact)
             .findResults { artifact ->
                 update(artifact) { version, pom ->
-                    pom.dependencyManagement.dependencies.dependency.find { isSame(dependency, artifact) }.version[0].value = version
+                    pom.dependencyManagement.dependencies.dependency.find { isSame(it, artifact) }.version[0].value = version
                 }
             }
     }
@@ -186,7 +186,7 @@ class PerformMojo extends AbstractMojo {
             .collect(this.&createDependencyArtifact)
             .findResults { artifact ->
                 update(artifact) { version, pom ->
-                    pom.dependencies.dependency.find { isSame(dependency, artifact) }.version[0].value = version
+                    pom.dependencies.dependency.find { isSame(it, artifact) }.version[0].value = version
                 }
             }
     }
@@ -217,7 +217,7 @@ class PerformMojo extends AbstractMojo {
         ]
     }
 
-    private def getLatestVersion(Artifact artifact) {
+    private def getLatestVersion(artifact) {
         artifactMetadataSource
             .retrieveAvailableVersions(artifact, localRepository, remoteArtifactRepositories)
             .findAll { it.qualifier != 'SNAPSHOT' }
