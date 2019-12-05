@@ -4,6 +4,7 @@
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/helpermethod/dependency-update-maven-plugin/master/LICENSE)
 
 The `Dependency Update Maven Plugin` analyzes the dependencies of your Maven project.
+
 If a more recent version for a dependency is found, the plugin will
 
 * create a new branch
