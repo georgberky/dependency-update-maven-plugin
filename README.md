@@ -5,7 +5,7 @@
 
 The `Dependency Update Maven Plugin` analyzes the dependencies of your Maven project.
 
-If a more recent version for a dependency is found, the plugin will
+If a more recent version of a dependency is found, the plugin will
 
 * create a new branch
 * update the dependency version in the POM
