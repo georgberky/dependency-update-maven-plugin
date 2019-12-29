@@ -3,6 +3,9 @@ package com.github.helpermethod
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.JSchException
 import com.jcraft.jsch.Session
+import groovy.xml.DOMBuilder
+import groovy.xml.XmlUtil
+import groovy.xml.dom.DOMCategory
 import org.apache.maven.artifact.Artifact
 import org.apache.maven.artifact.factory.ArtifactFactory
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource
@@ -23,6 +26,8 @@ import org.eclipse.jgit.transport.Transport
 import org.eclipse.jgit.transport.URIish
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.eclipse.jgit.util.FS
+
+import javax.xml.transform.OutputKeys
 
 import static org.apache.maven.artifact.versioning.VersionRange.createFromVersionSpec
 import static org.eclipse.jgit.api.ListBranchCommand.ListMode.REMOTE
@@ -138,14 +143,14 @@ class UpdateMojo extends AbstractMojo {
     }
 
     def withPom(cl) {
-        def pom = new XmlParser(false, false).parse(mavenProject.file)
+        def pom = DOMBuilder.parse(mavenProject.file.newReader(), false, false).documentElement
 
-        cl(pom)
+        use(DOMCategory) {
+            cl(pom)
+        }
 
-        mavenProject.file.withPrintWriter {
-            new XmlNodePrinter(it, " " * 4)
-                .tap { preserveWhitespace = true }
-                .print(pom)
+        mavenProject.file.withWriter {
+            XmlUtil.serialize(pom, it)
         }
     }
 
@@ -170,10 +175,10 @@ class UpdateMojo extends AbstractMojo {
     }
 
     private def dependencyManagementUpdates() {
-        (mavenProject.originalModel.dependencyManagement?.dependencies ?: [])
-            .findAll(this.&isConcrete)
-            .collect(this.&createDependencyArtifact)
-            .findResults { artifact ->
+        mavenProject.originalModel.dependencyManagement?.dependencies
+            ?.findAll(this.&isConcrete)
+            ?.collect(this.&createDependencyArtifact)
+            ?.findResults { artifact ->
                 update(artifact) { version, pom ->
                     pom.dependencyManagement.dependencies.dependency.find { isSame(it, artifact) }.version[0].value = version
                 }
