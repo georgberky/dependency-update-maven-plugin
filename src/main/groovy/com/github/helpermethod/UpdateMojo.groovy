@@ -3,8 +3,6 @@ package com.github.helpermethod
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.JSchException
 import com.jcraft.jsch.Session
-import groovy.xml.DOMBuilder
-import groovy.xml.XmlUtil
 import groovy.xml.dom.DOMCategory
 import org.apache.maven.artifact.Artifact
 import org.apache.maven.artifact.factory.ArtifactFactory
@@ -26,12 +24,22 @@ import org.eclipse.jgit.transport.Transport
 import org.eclipse.jgit.transport.URIish
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.eclipse.jgit.util.FS
-
-import javax.xml.transform.OutputKeys
+import org.jdom2.Element
+import org.jdom2.filter.Filter
+import org.jdom2.filter.Filters
+import org.jdom2.input.SAXBuilder
+import org.jdom2.output.Format
+import org.jdom2.output.XMLOutputter
+import org.jdom2.output.support.XMLOutputProcessor
+import org.jdom2.xpath.XPathExpression
+import org.jdom2.xpath.XPathFactory
 
 import static org.apache.maven.artifact.versioning.VersionRange.createFromVersionSpec
 import static org.eclipse.jgit.api.ListBranchCommand.ListMode.REMOTE
 import static org.eclipse.jgit.transport.OpenSshConfig.Host
+import static org.jdom2.filter.Filters.*
+import static org.jdom2.output.Format.rawFormat
+import static org.jdom2.output.LineSeparator.NONE
 
 @Mojo(name = "update")
 class UpdateMojo extends AbstractMojo {
@@ -143,15 +151,11 @@ class UpdateMojo extends AbstractMojo {
     }
 
     def withPom(cl) {
-        def pom = DOMBuilder.parse(mavenProject.file.newReader(), false, false).documentElement
+        def pom = new SAXBuilder().build(mavenProject.file)
 
-        use(DOMCategory) {
-            cl(pom)
-        }
+        cl(pom)
 
-        mavenProject.file.withWriter {
-            XmlUtil.serialize(pom, it)
-        }
+        new XMLOutputter(format: rawFormat.tap { lineSeparator = NONE }).output(pom, mavenProject.file.newWriter())
     }
 
     private String getConnection() {
@@ -170,7 +174,7 @@ class UpdateMojo extends AbstractMojo {
         if (!mavenProject.parentArtifact) return null
 
         update(mavenProject.parentArtifact) { version, pom ->
-            pom.children().find { it.name() == 'parent' }.version[0].value = version
+            XPathFactory.instance().compile("/project/parent/version", element()).evaluateFirst(pom)?.text = version
         }
     }
 
@@ -180,7 +184,7 @@ class UpdateMojo extends AbstractMojo {
             ?.collect(this.&createDependencyArtifact)
             ?.findResults { artifact ->
                 update(artifact) { version, pom ->
-                    pom.dependencyManagement.dependencies.dependency.find { isSame(it, artifact) }.version[0].value = version
+                    XPathFactory.instance().compile("/project/dependencyManagement/dependencies/dependency[groupId = '$artifact.groupId' && artifactId = '$artifact.artifactId' && version = '$artifact.version']/version", element()).evaluateFirst(pom)?.text = version
                 }
             }
     }
@@ -191,13 +195,9 @@ class UpdateMojo extends AbstractMojo {
             .collect(this.&createDependencyArtifact)
             .findResults { artifact ->
                 update(artifact) { version, pom ->
-                    pom.dependencies.dependency.find { isSame(it, artifact) }.version[0].value = version
+                    XPathFactory.instance().compile("/project/dependencies/dependency[groupId = '$artifact.groupId' && artifactId = '$artifact.artifactId' && version = '$artifact.version']/version", element()).evaluateFirst(pom)?.text = version
                 }
             }
-    }
-
-    private static def isSame(dependency, artifact) {
-        dependency.artifactId.text() == artifact.artifactId && dependency.groupId.text() == artifact.groupId && dependency.version.text() == artifact.version
     }
 
     private static def isConcrete(dependency) {

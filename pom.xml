@@ -4,7 +4,7 @@
     <groupId>com.github.helpermethod</groupId>
     <artifactId>dependency-update-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
-    <version>0.4.1</version>
+    <version>0.5.0</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>The Dependency Update Maven plugin creates merge requests for dependency updates.</description>
@@ -52,6 +52,7 @@
         <maven-source-plugin.version>3.2.0</maven-source-plugin.version>
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
         <nexus-staging-plugin.version>1.6.8</nexus-staging-plugin.version>
+        <jdom2.version>2.0.6</jdom2.version>
     </properties>
 
     <dependencies>
@@ -92,6 +93,11 @@
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
             <version>${jgit.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jdom</groupId>
+            <artifactId>jdom2</artifactId>
+            <version>${jdom2.version}</version>
         </dependency>
     </dependencies>
 
