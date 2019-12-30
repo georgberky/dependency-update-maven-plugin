@@ -23,10 +23,23 @@ import org.eclipse.jgit.transport.Transport
 import org.eclipse.jgit.transport.URIish
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.eclipse.jgit.util.FS
+import org.jdom2.Element
+import org.jdom2.JDOMFactory
+import org.jdom2.filter.Filters
+import org.jdom2.input.SAXBuilder
+import org.jdom2.input.sax.SAXHandler
+import org.jdom2.input.sax.SAXHandlerFactory
+import org.jdom2.output.Format
+import org.jdom2.output.XMLOutputter
+import org.jdom2.output.support.AbstractXMLOutputProcessor
+import org.jdom2.xpath.XPathFactory
+import org.xml.sax.Attributes
+import org.xml.sax.SAXException
 
 import static org.apache.maven.artifact.versioning.VersionRange.createFromVersionSpec
 import static org.eclipse.jgit.api.ListBranchCommand.ListMode.REMOTE
 import static org.eclipse.jgit.transport.OpenSshConfig.Host
+import static org.jdom2.filter.Filters.*
 
 @Mojo(name = "update")
 class UpdateMojo extends AbstractMojo {
@@ -110,7 +123,6 @@ class UpdateMojo extends AbstractMojo {
                                                 }
 
                                                 protected void configure(Host host, Session session) {
-                                                    // NOOP
                                                 }
                                             }
                                         }
@@ -138,15 +150,25 @@ class UpdateMojo extends AbstractMojo {
     }
 
     def withPom(cl) {
-        def pom = new XmlParser(false, false).parse(mavenProject.file)
+        def pom = new SAXBuilder(SAXHandlerFactory: new SAXHandlerFactory() {
+            @Override
+            SAXHandler createSAXHandler(JDOMFactory factory) {
+                return new SAXHandler() {
+                    @Override
+                    void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
+                        super.startElement('', localName, qName, atts);
+                    }
+
+                    @Override
+                    void startPrefixMapping(String prefix, String uri) throws SAXException {
+                    }
+                }
+            }
+        }).build(mavenProject.file)
 
         cl(pom)
 
-        mavenProject.file.withPrintWriter {
-            new XmlNodePrinter(it, " " * 4)
-                .tap { preserveWhitespace = true }
-                .print(pom)
-        }
+        new XMLOutputter().output(pom, mavenProject.file.newWriter())
     }
 
     private String getConnection() {
@@ -165,17 +187,17 @@ class UpdateMojo extends AbstractMojo {
         if (!mavenProject.parentArtifact) return null
 
         update(mavenProject.parentArtifact) { version, pom ->
-            pom.children().find { it.name() == 'parent' }.version[0].value = version
+            XPathFactory.instance().compile("/project/parent/version", element()).evaluateFirst(pom)?.text = version
         }
     }
 
     private def dependencyManagementUpdates() {
-        (mavenProject.originalModel.dependencyManagement?.dependencies ?: [])
-            .findAll(this.&isConcrete)
-            .collect(this.&createDependencyArtifact)
-            .findResults { artifact ->
+        mavenProject.originalModel.dependencyManagement?.dependencies
+            ?.findAll(this.&isConcrete)
+            ?.collect(this.&createDependencyArtifact)
+            ?.findResults { artifact ->
                 update(artifact) { version, pom ->
-                    pom.dependencyManagement.dependencies.dependency.find { isSame(it, artifact) }.version[0].value = version
+                    XPathFactory.instance().compile("/project/dependencyManagement/dependencies/dependency[groupId = '$artifact.groupId' && artifactId = '$artifact.artifactId' && version = '$artifact.version']/version", element()).evaluateFirst(pom)?.text = version
                 }
             }
     }
@@ -186,13 +208,9 @@ class UpdateMojo extends AbstractMojo {
             .collect(this.&createDependencyArtifact)
             .findResults { artifact ->
                 update(artifact) { version, pom ->
-                    pom.dependencies.dependency.find { isSame(it, artifact) }.version[0].value = version
+                    XPathFactory.instance().compile("/project/dependencies/dependency[groupId = '$artifact.groupId' && artifactId = '$artifact.artifactId' && version = '$artifact.version']/version", element()).evaluateFirst(pom)?.text = version
                 }
             }
-    }
-
-    private static def isSame(dependency, artifact) {
-        dependency.artifactId.text() == artifact.artifactId && dependency.groupId.text() == artifact.groupId && dependency.version.text() == artifact.version
     }
 
     private static def isConcrete(dependency) {
