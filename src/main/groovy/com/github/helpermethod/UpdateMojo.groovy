@@ -3,7 +3,6 @@ package com.github.helpermethod
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.JSchException
 import com.jcraft.jsch.Session
-import groovy.xml.dom.DOMCategory
 import org.apache.maven.artifact.Artifact
 import org.apache.maven.artifact.factory.ArtifactFactory
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource
@@ -25,21 +24,22 @@ import org.eclipse.jgit.transport.URIish
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.eclipse.jgit.util.FS
 import org.jdom2.Element
-import org.jdom2.filter.Filter
+import org.jdom2.JDOMFactory
 import org.jdom2.filter.Filters
 import org.jdom2.input.SAXBuilder
+import org.jdom2.input.sax.SAXHandler
+import org.jdom2.input.sax.SAXHandlerFactory
 import org.jdom2.output.Format
 import org.jdom2.output.XMLOutputter
-import org.jdom2.output.support.XMLOutputProcessor
-import org.jdom2.xpath.XPathExpression
+import org.jdom2.output.support.AbstractXMLOutputProcessor
 import org.jdom2.xpath.XPathFactory
+import org.xml.sax.Attributes
+import org.xml.sax.SAXException
 
 import static org.apache.maven.artifact.versioning.VersionRange.createFromVersionSpec
 import static org.eclipse.jgit.api.ListBranchCommand.ListMode.REMOTE
 import static org.eclipse.jgit.transport.OpenSshConfig.Host
 import static org.jdom2.filter.Filters.*
-import static org.jdom2.output.Format.rawFormat
-import static org.jdom2.output.LineSeparator.NONE
 
 @Mojo(name = "update")
 class UpdateMojo extends AbstractMojo {
@@ -123,7 +123,6 @@ class UpdateMojo extends AbstractMojo {
                                                 }
 
                                                 protected void configure(Host host, Session session) {
-                                                    // NOOP
                                                 }
                                             }
                                         }
@@ -151,11 +150,25 @@ class UpdateMojo extends AbstractMojo {
     }
 
     def withPom(cl) {
-        def pom = new SAXBuilder().build(mavenProject.file)
+        def pom = new SAXBuilder(SAXHandlerFactory: new SAXHandlerFactory() {
+            @Override
+            SAXHandler createSAXHandler(JDOMFactory factory) {
+                return new SAXHandler() {
+                    @Override
+                    void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
+                        super.startElement('', localName, qName, atts);
+                    }
+
+                    @Override
+                    void startPrefixMapping(String prefix, String uri) throws SAXException {
+                    }
+                }
+            }
+        }).build(mavenProject.file)
 
         cl(pom)
 
-        new XMLOutputter(format: rawFormat.tap { lineSeparator = NONE }).output(pom, mavenProject.file.newWriter())
+        new XMLOutputter().output(pom, mavenProject.file.newWriter())
     }
 
     private String getConnection() {
