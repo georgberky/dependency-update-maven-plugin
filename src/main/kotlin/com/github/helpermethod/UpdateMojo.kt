@@ -5,6 +5,7 @@ import org.apache.maven.artifact.Artifact
 import org.apache.maven.artifact.factory.ArtifactFactory
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource
 import org.apache.maven.artifact.repository.ArtifactRepository
+import org.apache.maven.model.Dependency
 import org.apache.maven.plugin.AbstractMojo
 import org.apache.maven.plugins.annotations.Component
 import org.apache.maven.plugins.annotations.Mojo
@@ -29,30 +30,29 @@ import org.xml.sax.Attributes
 
 @Mojo(name = "update")
 class UpdateMojo: AbstractMojo() {
-    @Parameter(defaultValue = "\${project}", readonly = true)
+    @Parameter(defaultValue = "\${project}", required = true)
     lateinit var mavenProject: MavenProject
-    @Parameter(defaultValue = "\${localRepository", readonly = true)
+    @Parameter(defaultValue = "\${localRepository}", required = true)
     lateinit var localRepository: ArtifactRepository
-    @Parameter(defaultValue = "\${settings}", readonly = true)
+    @Parameter(defaultValue = "\${settings}", required = true)
     lateinit var settings: Settings
-    @Parameter(property = "connectionUrl", defaultValue = "\${project.scm.connection}")
+    @Parameter(property = "connectionUrl", defaultValue = "\${project.scm.connection}", required = true)
     lateinit var connectionUrl: String
-    @Parameter(property = "developerConnectionUrl", defaultValue = "\${project.scm.developerConnection}")
+    @Parameter(property = "developerConnectionUrl", defaultValue = "\${project.scm.developerConnection}", required = true)
     lateinit var developerConnectionUrl: String
-    @Parameter(property = "connectionType", defaultValue = "connection")
+    @Parameter(property = "connectionType", defaultValue = "connection", required = true)
     lateinit var connectionType: String
-
-    private val connection: String
-        get() = if (connectionType == "developerConnection") developerConnectionUrl else connectionUrl
-
     @Component
     lateinit var artifactFactory: ArtifactFactory
     @Component
     lateinit var artifactMetadataSource: ArtifactMetadataSource
 
+    private val connection: String
+        get() = if (connectionType == "developerConnection") developerConnectionUrl else connectionUrl
+
     override fun execute() {
         withGit { git, head ->
-            listOf(::parentUpdate)
+            listOf(::parentUpdate, ::dependencyManagementUpdates, ::dependencyUpdates)
                 .flatMap { it() }
                 .map { it to "dependency-update/${it.groupId}-${it.artifactId}-${it.latestVersion}" }
                 .filter { (_, branchName) -> git.branchList().setListMode(ALL).call().none { it.name == "refs/remotes/origin/$branchName" }}
@@ -90,10 +90,10 @@ class UpdateMojo: AbstractMojo() {
                                     setCredentialsProvider(UsernamePasswordCredentialsProvider(username, password))
                                 }
                                 else -> {
-                                    setTransportConfigCallback(TransportConfigCallback {
-                                        if (it !is SshTransport) return@TransportConfigCallback
+                                    setTransportConfigCallback(TransportConfigCallback { transport ->
+                                        if (transport !is SshTransport) return@TransportConfigCallback
 
-                                        it.sshSessionFactory = object : JschConfigSessionFactory() {
+                                        transport.sshSessionFactory = object : JschConfigSessionFactory() {
                                             override fun configure(hc: OpenSshConfig.Host?, session: Session?) {
                                             }
 
@@ -150,11 +150,31 @@ class UpdateMojo: AbstractMojo() {
         XMLOutputter().output(pom, mavenProject.file.writer())
     }
 
-    fun parentUpdate() =
+    private fun parentUpdate() =
         listOfNotNull(mavenProject.parentArtifact)
-            .mapNotNull {
-                update(it) { version, pom ->
+            .mapNotNull { artifact ->
+                update(artifact) { version, pom ->
                     XPathFactory.instance().compile("/project/parent/version", element()).evaluateFirst(pom)?.text = version
+                }
+            }
+
+    private fun dependencyManagementUpdates() =
+        (mavenProject.originalModel.dependencyManagement?.dependencies ?: listOf())
+            .filter(Dependency::isConcrete)
+            .map(artifactFactory::createDependencyArtifact)
+            .mapNotNull { artifact ->
+                update(artifact) { version, pom ->
+                    XPathFactory.instance().compile("/project/dependencyManagement/dependencies/dependency[groupId = '${artifact.groupId}' && artifactId = '${artifact.artifactId}' && version = '${artifact.version}']/version", element()).evaluateFirst(pom)?.text = version
+                }
+            }
+
+    private fun dependencyUpdates() =
+        mavenProject.originalModel.dependencies
+            .filter(Dependency::isConcrete)
+            .map(artifactFactory::createDependencyArtifact)
+            .mapNotNull { artifact ->
+                update(artifact) { version, pom ->
+                    XPathFactory.instance().compile("/project/dependencies/dependency[groupId = '${artifact.groupId}' && artifactId = '${artifact.artifactId}' && version = '${artifact.version}']/version", element()).evaluateFirst(pom)?.text = version
                 }
             }
 
