@@ -12,6 +12,8 @@ import org.apache.maven.plugins.annotations.Mojo
 import org.apache.maven.plugins.annotations.Parameter
 import org.apache.maven.project.MavenProject
 import org.apache.maven.settings.Settings
+import org.codehaus.stax2.XMLInputFactory2
+import org.codehaus.stax2.XMLInputFactory2.P_PRESERVE_LOCATION
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand.ListMode.ALL
 import org.eclipse.jgit.api.TransportConfigCallback
@@ -21,12 +23,9 @@ import org.eclipse.jgit.transport.*
 import org.eclipse.jgit.util.FS
 import org.jdom2.Document
 import org.jdom2.filter.Filters.element
-import org.jdom2.input.SAXBuilder
-import org.jdom2.input.sax.SAXHandler
-import org.jdom2.input.sax.SAXHandlerFactory
+import org.jdom2.input.StAXStreamBuilder
 import org.jdom2.output.XMLOutputter
 import org.jdom2.xpath.XPathFactory
-import org.xml.sax.Attributes
 
 @Mojo(name = "update")
 class UpdateMojo: AbstractMojo() {
@@ -130,20 +129,10 @@ class UpdateMojo: AbstractMojo() {
     }
 
     private fun withPom(f: (Document) -> Unit) {
-        val namespaceIgnoringSaxBuilder = SAXBuilder().apply {
-            saxHandlerFactory = SAXHandlerFactory {
-                object : SAXHandler() {
-                    override fun startElement(namespaceURI: String?, localName: String?, qName: String?, atts: Attributes?) {
-                        super.startElement("", localName, qName, atts)
-                    }
-
-                    override fun startPrefixMapping(prefix: String?, uri: String?) {
-                    }
-                }
-            }
+        val xmlInputFactory = XMLInputFactory2.newInstance().apply {
+            setProperty(P_PRESERVE_LOCATION, true)
         }
-
-        val pom = namespaceIgnoringSaxBuilder.build(mavenProject.file)
+        val pom = StAXStreamBuilder().build(xmlInputFactory.createXMLStreamReader(mavenProject.file.reader()))
 
         f(pom)
 
@@ -164,7 +153,7 @@ class UpdateMojo: AbstractMojo() {
             .map(artifactFactory::createDependencyArtifact)
             .mapNotNull { artifact ->
                 update(artifact) { version, pom ->
-                    XPathFactory.instance().compile("/project/dependencyManagement/dependencies/dependency[groupId = '${artifact.groupId}' && artifactId = '${artifact.artifactId}' && version = '${artifact.version}']/version", element()).evaluateFirst(pom)?.text = version
+                    XPathFactory.instance().compile("/project/dependencyManagement/dependencies/dependency[groupId = '${artifact.groupId}' and artifactId = '${artifact.artifactId}' and version = '${artifact.version}']/version", element()).evaluateFirst(pom)?.text = version
                 }
             }
 
@@ -174,7 +163,7 @@ class UpdateMojo: AbstractMojo() {
             .map(artifactFactory::createDependencyArtifact)
             .mapNotNull { artifact ->
                 update(artifact) { version, pom ->
-                    XPathFactory.instance().compile("/project/dependencies/dependency[groupId = '${artifact.groupId}' && artifactId = '${artifact.artifactId}' && version = '${artifact.version}']/version", element()).evaluateFirst(pom)?.text = version
+                    XPathFactory.instance().compile("/project/dependencies/dependency[groupId = '${artifact.groupId}' and artifactId = '${artifact.artifactId}' and version = '${artifact.version}']/version", element()).evaluateFirst(pom)?.text = version
                 }
             }
 
