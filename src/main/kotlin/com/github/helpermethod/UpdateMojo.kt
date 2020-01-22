@@ -24,8 +24,12 @@ import org.eclipse.jgit.util.FS
 import org.jdom2.Document
 import org.jdom2.filter.Filters.element
 import org.jdom2.input.StAXStreamBuilder
+import org.jdom2.output.Format
+import org.jdom2.output.LineSeparator
+import org.jdom2.output.LineSeparator.NONE
 import org.jdom2.output.XMLOutputter
 import org.jdom2.xpath.XPathFactory
+import javax.xml.stream.util.StreamReaderDelegate
 
 @Mojo(name = "update")
 class UpdateMojo: AbstractMojo() {
@@ -112,7 +116,7 @@ class UpdateMojo: AbstractMojo() {
     }
 
     private fun usernamePassword(uri: URIish) =
-            if (uri.user != null) uri.user to uri.pass else settings.getServer(uri.host).run { username to password }
+        if (uri.user != null) uri.user to uri.pass else settings.getServer(uri.host).run { username to password }
 
     private fun withGit(f: (Git, String) -> Unit) {
         val git = Git(
@@ -132,11 +136,16 @@ class UpdateMojo: AbstractMojo() {
         val xmlInputFactory = XMLInputFactory2.newInstance().apply {
             setProperty(P_PRESERVE_LOCATION, true)
         }
-        val pom = StAXStreamBuilder().build(xmlInputFactory.createXMLStreamReader(mavenProject.file.reader()))
+        val namespaceIgnoringStreamReder = object: StreamReaderDelegate(xmlInputFactory.createXMLStreamReader(mavenProject.file.reader())) {
+            override fun getAttributeNamespace(index: Int) = ""
+
+            override fun getNamespaceURI(index: Int) = ""
+        }
+        val pom = StAXStreamBuilder().build(namespaceIgnoringStreamReder)
 
         f(pom)
 
-        XMLOutputter().output(pom, mavenProject.file.writer())
+        XMLOutputter(Format.getRawFormat().setLineSeparator(NONE)).output(pom, mavenProject.file.writer())
     }
 
     private fun parentUpdate() =
