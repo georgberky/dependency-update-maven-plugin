@@ -1,6 +1,5 @@
 package com.github.helpermethod
 
-import com.jcraft.jsch.Session
 import org.apache.maven.artifact.Artifact
 import org.apache.maven.artifact.factory.ArtifactFactory
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource
@@ -15,17 +14,12 @@ import org.apache.maven.settings.Settings
 import org.codehaus.stax2.XMLInputFactory2
 import org.codehaus.stax2.XMLInputFactory2.P_PRESERVE_LOCATION
 import org.eclipse.jgit.api.Git
-import org.eclipse.jgit.api.ListBranchCommand.ListMode.ALL
-import org.eclipse.jgit.api.TransportConfigCallback
-import org.eclipse.jgit.lib.PersonIdent
 import org.eclipse.jgit.lib.RepositoryBuilder
 import org.eclipse.jgit.transport.*
-import org.eclipse.jgit.util.FS
 import org.jdom2.Document
 import org.jdom2.filter.Filters.element
 import org.jdom2.input.StAXStreamBuilder
 import org.jdom2.output.Format
-import org.jdom2.output.LineSeparator
 import org.jdom2.output.LineSeparator.NONE
 import org.jdom2.output.XMLOutputter
 import org.jdom2.xpath.XPathFactory
@@ -54,82 +48,37 @@ class UpdateMojo: AbstractMojo() {
         get() = if (connectionType == "developerConnection") developerConnectionUrl else connectionUrl
 
     override fun execute() {
-        withGit { git, head ->
+        withGit { git ->
             listOf(::parentUpdate, ::dependencyManagementUpdates, ::dependencyUpdates)
                 .flatMap { it() }
                 .map { it to "dependency-update/${it.groupId}-${it.artifactId}-${it.latestVersion}" }
-                .filter { (_, branchName) -> git.branchList().setListMode(ALL).call().none { it.name == "refs/remotes/origin/$branchName" }}
+                .filter { (_, branchName) -> git.hasRemoteBranch(branchName)}
                 .forEach { (update, branchName) ->
-                    git
-                        .checkout()
-                        .setStartPoint(head)
-                        .setCreateBranch(true)
-                        .setName(branchName)
-                        .call()
-
+                    git.checkout(branchName)
                     withPom(update.modification)
-
-                    git
-                        .add()
-                        .addFilepattern("pom.xml")
-                        .call()
-
-                    git
-                        .commit()
-                        .setAuthor(PersonIdent("dependency-update-bot", ""))
-                        .setMessage("Bump $update.artifactId from $update.currentVersion to $update.latestVersion")
-                        .call()
-
-                    git
-                        .push()
-                        .setRefSpecs(RefSpec("$branchName:$branchName"))
-                        .apply {
-                            val uri = URIish(connection.removePrefix("scm:git:"))
-
-                            when (uri.scheme) {
-                                "https" -> {
-                                    val (username, password) = usernamePassword(uri)
-
-                                    setCredentialsProvider(UsernamePasswordCredentialsProvider(username, password))
-                                }
-                                else -> {
-                                    setTransportConfigCallback(TransportConfigCallback { transport ->
-                                        if (transport !is SshTransport) return@TransportConfigCallback
-
-                                        transport.sshSessionFactory = object : JschConfigSessionFactory() {
-                                            override fun configure(hc: OpenSshConfig.Host?, session: Session?) {
-                                            }
-
-                                            override fun createDefaultJSch(fs: FS?) =
-                                                settings.getServer(uri.host).run {
-                                                    super.createDefaultJSch(fs).apply { addIdentity(privateKey, passphrase) }
-                                                }
-                                            }
-                                        })
-                                }
-                            }
-                        }
-                        .setPushOptions(listOf("merge_request.create"))
-                        .call()
+                    git.add("pom.xml")
+                    git.commit("dependency-update-bot", "Bump $update.artifactId from $update.currentVersion to $update.latestVersion" )
+                    git.push(branchName)
                 }
         }
     }
 
-    private fun usernamePassword(uri: URIish) =
-        if (uri.user != null) uri.user to uri.pass else settings.getServer(uri.host).run { username to password }
 
-    private fun withGit(f: (Git, String) -> Unit) {
-        val git = Git(
+
+    private fun withGit(f: (GitProvider) -> Unit) {
+        val git = JGitProvider(Git(
             RepositoryBuilder()
                 .readEnvironment()
                 .findGitDir(mavenProject.basedir)
                 .setMustExist(true)
                 .build()
-        )
+        ), connection, settings)
 
-        f(git, git.repository.fullBranch)
+        git.use{
+            f(git)
+        }
 
-        git.close()
+
     }
 
     private fun withPom(f: (Document) -> Unit) {
