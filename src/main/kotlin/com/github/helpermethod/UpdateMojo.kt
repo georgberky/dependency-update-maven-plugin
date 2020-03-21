@@ -74,11 +74,7 @@ class UpdateMojo: AbstractMojo() {
                 .build()
         ), connection, settings)
 
-        git.use{
-            f(git)
-        }
-
-
+        git.use(f)
     }
 
     private fun withPom(f: (Document) -> Unit) {
