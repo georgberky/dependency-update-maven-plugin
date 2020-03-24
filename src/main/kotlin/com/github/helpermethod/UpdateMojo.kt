@@ -12,8 +12,6 @@ import org.apache.maven.plugins.annotations.Mojo
 import org.apache.maven.plugins.annotations.Parameter
 import org.apache.maven.project.MavenProject
 import org.apache.maven.settings.Settings
-import org.codehaus.stax2.XMLInputFactory2
-import org.codehaus.stax2.XMLInputFactory2.P_PRESERVE_LOCATION
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand.ListMode.ALL
 import org.eclipse.jgit.api.TransportConfigCallback
@@ -21,15 +19,9 @@ import org.eclipse.jgit.lib.PersonIdent
 import org.eclipse.jgit.lib.RepositoryBuilder
 import org.eclipse.jgit.transport.*
 import org.eclipse.jgit.util.FS
-import org.jdom2.Document
-import org.jdom2.filter.Filters.element
-import org.jdom2.input.StAXStreamBuilder
-import org.jdom2.output.Format
-import org.jdom2.output.LineSeparator
-import org.jdom2.output.LineSeparator.NONE
-import org.jdom2.output.XMLOutputter
-import org.jdom2.xpath.XPathFactory
-import javax.xml.stream.util.StreamReaderDelegate
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+import org.jsoup.parser.Parser.xmlParser
 
 @Mojo(name = "update")
 class UpdateMojo: AbstractMojo() {
@@ -133,26 +125,20 @@ class UpdateMojo: AbstractMojo() {
     }
 
     private fun withPom(f: (Document) -> Unit) {
-        val xmlInputFactory = XMLInputFactory2.newInstance().apply {
-            setProperty(P_PRESERVE_LOCATION, true)
+        val pom = Jsoup.parse(mavenProject.file.readText(), "", xmlParser()).apply {
+            outputSettings().prettyPrint(false)
         }
-        val namespaceIgnoringStreamReder = object: StreamReaderDelegate(xmlInputFactory.createXMLStreamReader(mavenProject.file.reader())) {
-            override fun getAttributeNamespace(index: Int) = ""
-
-            override fun getNamespaceURI(index: Int) = ""
-        }
-        val pom = StAXStreamBuilder().build(namespaceIgnoringStreamReder)
 
         f(pom)
 
-        XMLOutputter(Format.getRawFormat().setLineSeparator(NONE)).output(pom, mavenProject.file.writer())
+        mavenProject.file.writeText(pom.html())
     }
 
     private fun parentUpdate() =
         listOfNotNull(mavenProject.parentArtifact)
             .mapNotNull { artifact ->
                 update(artifact) { version, pom ->
-                    XPathFactory.instance().compile("/project/parent/version", element()).evaluateFirst(pom)?.text = version
+                    pom.selectFirst("project > parent > version").text(version)
                 }
             }
 
@@ -162,7 +148,7 @@ class UpdateMojo: AbstractMojo() {
             .map(artifactFactory::createDependencyArtifact)
             .mapNotNull { artifact ->
                 update(artifact) { version, pom ->
-                    XPathFactory.instance().compile("/project/dependencyManagement/dependencies/dependency[groupId = '${artifact.groupId}' and artifactId = '${artifact.artifactId}' and version = '${artifact.version}']/version", element()).evaluateFirst(pom)?.text = version
+                    pom.selectFirst("project > dependencyManagement > dependencies > dependency[groupId = '${artifact.groupId}'][artifactId = '${artifact.artifactId}'][version = '${artifact.version}'] > version").text(version)
                 }
             }
 
@@ -172,7 +158,7 @@ class UpdateMojo: AbstractMojo() {
             .map(artifactFactory::createDependencyArtifact)
             .mapNotNull { artifact ->
                 update(artifact) { version, pom ->
-                    XPathFactory.instance().compile("/project/dependencies/dependency[groupId = '${artifact.groupId}' and artifactId = '${artifact.artifactId}' and version = '${artifact.version}']/version", element()).evaluateFirst(pom)?.text = version
+                    pom.selectFirst("project > dependencies > dependency[groupId = '${artifact.groupId}'][artifactId = '${artifact.artifactId}'][version = '${artifact.version}'] > version").text(version)
                 }
             }
 
