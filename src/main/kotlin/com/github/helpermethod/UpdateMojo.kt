@@ -148,7 +148,7 @@ class UpdateMojo: AbstractMojo() {
             .map(artifactFactory::createDependencyArtifact)
             .mapNotNull { artifact ->
                 update(artifact) { version, pom ->
-                    pom.selectFirst("project > dependencyManagement > dependencies > dependency[groupId = '${artifact.groupId}'][artifactId = '${artifact.artifactId}'][version = '${artifact.version}'] > version").text(version)
+                    pom.selectFirst("project > dependencyManagement > dependencies > dependency:has(> groupId:containsOwn(${artifact.groupId})):has(> artifactId:containsOwn(${artifact.groupId})):has(> version:containsOwn(${artifact.version}))").text(version)
                 }
             }
 
@@ -158,7 +158,7 @@ class UpdateMojo: AbstractMojo() {
             .map(artifactFactory::createDependencyArtifact)
             .mapNotNull { artifact ->
                 update(artifact) { version, pom ->
-                    pom.selectFirst("project > dependencies > dependency[groupId = '${artifact.groupId}'][artifactId = '${artifact.artifactId}'][version = '${artifact.version}'] > version").text(version)
+                    pom.selectFirst("project > dependencies > dependency:has(> groupId:containsOwn(${artifact.groupId})):has(> artifactId:containsOwn(${artifact.groupId})):has(> version:containsOwn(${artifact.version}))").text(version)
                 }
             }
 
@@ -173,6 +173,7 @@ class UpdateMojo: AbstractMojo() {
     private fun retrieveLatestVersion(artifact: Artifact) =
         artifactMetadataSource
             .retrieveAvailableVersions(artifact, localRepository, mavenProject.remoteArtifactRepositories)
+            // TODO the filter should be made configurable with `SNAPSHOT` as default
             .filter { it.qualifier != "SNAPSHOT" }
             .max()
             .toString()
