@@ -94,7 +94,7 @@ class UpdateMojo: AbstractMojo() {
             .map(artifactFactory::createDependencyArtifact)
             .mapNotNull { artifact ->
                 update(artifact) { version, pom ->
-                    pom.selectFirst("project > dependencyManagement > dependencies > dependency:has(> groupId:containsOwn(${artifact.groupId})):has(> artifactId:containsOwn(${artifact.groupId})):has(> version:containsOwn(${artifact.version}))").text(version)
+                    pom.selectFirst("project > dependencyManagement > dependencies > dependency:has(> groupId:containsOwn(${artifact.groupId})):has(> artifactId:containsOwn(${artifact.groupId})):has(> version:containsOwn(${artifact.version})) > version").text(version)
                 }
             }
 
@@ -104,7 +104,7 @@ class UpdateMojo: AbstractMojo() {
             .map(artifactFactory::createDependencyArtifact)
             .mapNotNull { artifact ->
                 update(artifact) { version, pom ->
-                    pom.selectFirst("project > dependencies > dependency:has(> groupId:containsOwn(${artifact.groupId})):has(> artifactId:containsOwn(${artifact.groupId})):has(> version:containsOwn(${artifact.version}))").text(version)
+                    pom.selectFirst("project > dependencies > dependency:has(> groupId:containsOwn(${artifact.groupId})):has(> artifactId:containsOwn(${artifact.groupId})):has(> version:containsOwn(${artifact.version})) > version").text(version)
                 }
             }
 
