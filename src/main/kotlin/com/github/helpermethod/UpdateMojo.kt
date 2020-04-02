@@ -54,7 +54,7 @@ class UpdateMojo : AbstractMojo() {
             .filter { (_, branchName) -> git.hasRemoteBranch(branchName) }
             .forEach { (update, branchName) ->
                 git.checkout(branchName)
-                withPom(update.modification)
+                update.update()
                 git.add("pom.xml")
                 git.commit(
                     "dependency-update-bot",
