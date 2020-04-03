@@ -7,4 +7,6 @@ abstract class VersionUpdate(
         val latestVersion: String
 ) {
     abstract fun update() : Unit
+
+    fun canSkip() = latestVersion == version
 }

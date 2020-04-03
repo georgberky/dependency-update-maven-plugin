@@ -9,7 +9,6 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.parser.Parser
 
-//TODO: avoid fetching latest version twice
 class UpdateResolver(
     private val mavenProject: MavenProject,
     private val artifactMetadataSource: ArtifactMetadataSource,
@@ -22,7 +21,6 @@ class UpdateResolver(
 
     val parentUpdates
         get() = listOfNotNull(mavenProject.parentArtifact)
-                .filter { a -> retrieveLatestVersion(a) != a.version }
                 .map { artifact -> ParentVersionUpdate(
                         artifact.groupId,
                         artifact.artifactId,
@@ -34,7 +32,6 @@ class UpdateResolver(
         get() = (mavenProject.originalModel.dependencyManagement?.dependencies ?: listOf())
             .filter(Dependency::isConcrete)
             .map(createDependency)
-            .filter { a -> retrieveLatestVersion(a) != a.version }
             .map { artifact -> DependencyManagementVersionUpdate(
                     artifact.groupId,
                     artifact.artifactId,
@@ -46,7 +43,6 @@ class UpdateResolver(
         get() = mavenProject.originalModel.dependencies
             .filter(Dependency::isConcrete)
             .map(createDependency)
-            .filter { a -> retrieveLatestVersion(a) != a.version }
             .map { a -> DependencyVersionUpdate(
                     a.groupId,
                     a.artifactId,

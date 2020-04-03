@@ -50,6 +50,7 @@ class UpdateMojo : AbstractMojo() {
                 createDependency = artifactFactory::createDependencyArtifact
             )
             .updates
+            .filter(VersionUpdate::canSkip)
             .map { it to "dependency-update/${it.groupId}-${it.artifactId}-${it.latestVersion}" }
             .filter { (_, branchName) -> git.hasRemoteBranch(branchName) }
             .forEach { (update, branchName) ->
