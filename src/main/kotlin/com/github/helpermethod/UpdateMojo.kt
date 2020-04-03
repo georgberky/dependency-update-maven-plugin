@@ -56,6 +56,7 @@ class UpdateMojo : AbstractMojo() {
             .forEach { (update, branchName) ->
                 git.checkout(branchName)
                 update.update()
+                // TODO we forget to write back the change to pom :)
                 git.add("pom.xml")
                 git.commit(
                     "dependency-update-bot",
