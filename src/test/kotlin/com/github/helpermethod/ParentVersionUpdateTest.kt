@@ -1,5 +1,6 @@
 package com.github.helpermethod
 
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 internal class ParentVersionUpdateTest {
@@ -12,8 +13,6 @@ internal class ParentVersionUpdateTest {
 
         val updatedPom = updateVersionUnderTest.updatedPom()
 
-        assertThatPom(updatedPom)
-                .valueByXPath("//pom:project/pom:parent/pom:version/text()")
-                .isEqualTo("0.7.0")
+        assertThat(extractFromPom(updatedPom, "project.parent.version")).isEqualTo("0.7.0")
     }
 }
