@@ -11,9 +11,6 @@ import org.apache.maven.project.MavenProject
 import org.apache.maven.settings.Settings
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.RepositoryBuilder
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.jsoup.parser.Parser.xmlParser
 
 @Mojo(name = "update")
 class UpdateMojo : AbstractMojo() {
@@ -55,8 +52,8 @@ class UpdateMojo : AbstractMojo() {
             .filter { (_, branchName) -> git.hasRemoteBranch(branchName) }
             .forEach { (update, branchName) ->
                 git.checkout(branchName)
-                update.update()
-                // TODO we forget to write back the change to pom :)
+                val pom = update.updatedPom()
+                mavenProject.file.writeText(pom.html())
                 git.add("pom.xml")
                 git.commit(
                     "dependency-update-bot",
@@ -79,15 +76,5 @@ class UpdateMojo : AbstractMojo() {
         )
 
         git.use(f)
-    }
-
-    private fun withPom(f: (Document) -> Unit) {
-        val pom = Jsoup.parse(mavenProject.file.readText(), "", xmlParser()).apply {
-            outputSettings().prettyPrint(false)
-        }
-
-        f(pom)
-
-        mavenProject.file.writeText(pom.html())
     }
 }

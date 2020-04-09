@@ -11,7 +11,8 @@ class ParentVersionUpdate(
         private val pom: Document
 ) : VersionUpdate(groupId, artifactId, version, latestVersion) {
 
-    override fun update() : Unit {
+    override fun updatedPom() : Document {
         pom.selectFirst("project > parent > version").text(latestVersion)
+        return pom
     }
 }
