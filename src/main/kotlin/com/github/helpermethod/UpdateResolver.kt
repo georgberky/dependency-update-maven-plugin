@@ -54,7 +54,7 @@ class UpdateResolver(
     private fun retrieveLatestVersion(artifact: Artifact) =
         artifactMetadataSource
             .retrieveAvailableVersions(artifact, localRepository, mavenProject.remoteArtifactRepositories)
-            .filterNot { it.qualifier != "SNAPSHOT" }
+            .filter { it.qualifier != "SNAPSHOT" }
             .max()
             .toString()
 
