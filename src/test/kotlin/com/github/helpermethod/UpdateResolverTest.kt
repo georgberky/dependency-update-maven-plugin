@@ -85,6 +85,22 @@ internal class UpdateResolverTest {
                         tuple("org.assertj", "assertj-core", "3.15.0", "6.0.0"))
     }
 
+    private fun projectWithParent(): MavenProject {
+        val project = MavenProject()
+        project.parentArtifact = artifact("com.github.helpermethod", "dependency-update-parent", "0.6.0")
+        project.file = File("src/test/resources/poms/parentPom.xml")
+        return project
+    }
+
+    private fun projectWithDependencies(): MavenProject {
+        val project = MavenProject()
+        val originalModel = Model()
+        originalModel.dependencies = listOf(junitDependency,assertJDependency)
+        project.originalModel = originalModel
+        project.file = File("src/test/resources/poms/dependenciesPom.xml")
+        return project
+    }
+
     private fun projectWithDependenciesManagement(): MavenProject {
         val project = MavenProject()
         val originalModel = Model()
@@ -96,29 +112,12 @@ internal class UpdateResolverTest {
         return project
     }
 
-
-    private fun projectWithDependencies(): MavenProject {
-        val project = MavenProject()
-        val originalModel = Model()
-        originalModel.dependencies = listOf(junitDependency,assertJDependency)
-        project.originalModel = originalModel
-        project.file = File("src/test/resources/poms/dependenciesPom.xml")
-        return project
-    }
-
     private fun dependency(groupId: String, artifactId: String, version: String): Dependency {
         val dependency = Dependency()
         dependency.groupId = groupId
         dependency.artifactId = artifactId
         dependency.version = version
         return dependency
-    }
-
-    private fun projectWithParent(): MavenProject {
-        val project = MavenProject()
-        project.parentArtifact = artifact("com.github.helpermethod", "dependency-update-parent", "0.6.0")
-        project.file = File("src/test/resources/poms/parentPom.xml")
-        return project
     }
 
     private fun artifact(groupId: String, artifactId: String, version: String) =
