@@ -7,6 +7,8 @@ import org.apache.maven.artifact.factory.ArtifactFactory
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource
 import org.apache.maven.artifact.repository.ArtifactRepository
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
+import org.apache.maven.model.Dependency
+import org.apache.maven.model.Model
 import org.apache.maven.plugin.testing.ArtifactStubFactory
 import org.apache.maven.project.MavenProject
 import org.assertj.core.api.Assertions.assertThat
@@ -17,6 +19,12 @@ import java.io.File
 
 @ExtendWith(MockKExtension::class)
 internal class UpdateResolverTest {
+    private val junitArtifact = artifact("org.junit.jupiter", "junit-jupiter", "5.5.2")
+    private val junitDependency = dependency("org.junit.jupiter", "junit-jupiter", "5.5.2")
+    private val assertJDependency = dependency("org.assertj", "assertj-core", "3.15.0")
+    private val assertJArtifact = artifact("org.assertj", "assertj-core", "3.15.0")
+
+
     @MockK
     lateinit var metadataSourceMock : ArtifactMetadataSource
 
@@ -25,6 +33,7 @@ internal class UpdateResolverTest {
 
     @MockK
     lateinit var artifactFactoryMock : ArtifactFactory
+
 
     @Test
     fun parentUpdate() {
@@ -41,6 +50,42 @@ internal class UpdateResolverTest {
                         project.parentArtifact.artifactId,
                         project.parentArtifact.version,
                         "1.0.0"))
+    }
+
+    @Test
+    fun dependencyUpdates() {
+        val project = projectWithDependencies()
+        every { metadataSourceMock.retrieveAvailableVersions(any(), any(), any()) } returns listOf( DefaultArtifactVersion("6.0.0") )
+        every { artifactFactoryMock.createDependencyArtifact(junitDependency) } returns junitArtifact
+        every { artifactFactoryMock.createDependencyArtifact(assertJDependency) } returns assertJArtifact
+
+        val updateResolverUnderTest = UpdateResolver(project, metadataSourceMock, localRepositoryMock, artifactFactoryMock)
+
+        assertThat(updateResolverUnderTest.dependencyUpdates)
+                .hasSize(2)
+                .extracting("groupId", "artifactId", "version", "latestVersion")
+                .containsExactly(tuple("org.junit.jupiter", "junit-jupiter", "5.5.2","6.0.0"),
+                                 tuple("org.assertj", "assertj-core", "3.15.0", "6.0.0"))
+    }
+
+
+
+    private fun projectWithDependencies(): MavenProject {
+        val project = MavenProject()
+        val originalModel = Model()
+        originalModel.dependencies = listOf(junitDependency,
+                assertJDependency)
+        project.originalModel = originalModel
+        project.file = File("src/test/resources/poms/dependenciesPom.xml")
+        return project
+    }
+
+    private fun dependency(groupId: String, artifactId: String, version: String): Dependency {
+        val dependency = Dependency()
+        dependency.groupId = groupId
+        dependency.artifactId = artifactId
+        dependency.version = version
+        return dependency
     }
 
     private fun projectWithParent(): MavenProject {
