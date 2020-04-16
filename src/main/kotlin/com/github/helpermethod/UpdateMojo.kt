@@ -41,10 +41,10 @@ class UpdateMojo : AbstractMojo() {
     override fun execute() {
         withGit { git ->
             UpdateResolver(
-                mavenProject = mavenProject,
-                artifactMetadataSource = artifactMetadataSource,
-                localRepository = localRepository,
-                createDependency = artifactFactory::createDependencyArtifact
+                    mavenProject = mavenProject,
+                    artifactMetadataSource = artifactMetadataSource,
+                    localRepository = localRepository,
+                    artifactFactory = artifactFactory
             )
             .updates
             .filter(VersionUpdate::canSkip)

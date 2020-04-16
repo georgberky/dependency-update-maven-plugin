@@ -1,6 +1,7 @@
 package com.github.helpermethod
 
 import org.apache.maven.artifact.Artifact
+import org.apache.maven.artifact.factory.ArtifactFactory
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource
 import org.apache.maven.artifact.repository.ArtifactRepository
 import org.apache.maven.model.Dependency
@@ -10,10 +11,10 @@ import org.jsoup.nodes.Document
 import org.jsoup.parser.Parser
 
 class UpdateResolver(
-    private val mavenProject: MavenProject,
-    private val artifactMetadataSource: ArtifactMetadataSource,
-    private val localRepository: ArtifactRepository,
-    private val createDependency: (dependency: Dependency) -> Artifact
+        private val mavenProject: MavenProject,
+        private val artifactMetadataSource: ArtifactMetadataSource,
+        private val localRepository: ArtifactRepository,
+        private val artifactFactory: ArtifactFactory
 ) {
     val updates
         get() =
@@ -31,7 +32,7 @@ class UpdateResolver(
     val dependencyManagementUpdates
         get() = (mavenProject.originalModel.dependencyManagement?.dependencies ?: listOf())
             .filter(Dependency::isConcrete)
-            .map(createDependency)
+            .map(artifactFactory::createDependencyArtifact)
             .map { artifact -> DependencyManagementVersionUpdate(
                     artifact.groupId,
                     artifact.artifactId,
@@ -42,7 +43,7 @@ class UpdateResolver(
     val dependencyUpdates
         get() = mavenProject.originalModel.dependencies
             .filter(Dependency::isConcrete)
-            .map(createDependency)
+            .map(artifactFactory::createDependencyArtifact)
             .map { a -> DependencyVersionUpdate(
                     a.groupId,
                     a.artifactId,
