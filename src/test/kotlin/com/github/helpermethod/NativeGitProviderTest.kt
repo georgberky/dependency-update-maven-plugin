@@ -5,6 +5,7 @@ import org.assertj.core.api.Assertions.tuple
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.revwalk.RevCommit
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
@@ -17,16 +18,20 @@ class NativeGitProviderTest {
     lateinit var gitDirectory : Path;
     lateinit var gitRepo: Git
 
+    lateinit var providerUnderTest: NativeGitProvider
+
     @BeforeEach
     internal fun setUp() {
         gitRepo = Git.init()
                 .setDirectory(gitDirectory.toFile())
                 .call()
+
+        providerUnderTest = NativeGitProvider(gitDirectory)
     }
 
     @Test
+    @DisplayName("can add files")
     internal fun canAddFiles() {
-        val providerUnderTest = NativeGitProvider(gitDirectory)
         val newFile = File(gitDirectory.toFile(), "newFile")
         newFile.createNewFile()
 
@@ -37,8 +42,8 @@ class NativeGitProviderTest {
     }
 
     @Test
+    @DisplayName("can commit")
     internal fun canCommit() {
-        val providerUnderTest = NativeGitProvider(gitDirectory)
         val fileToCommit = File(gitDirectory.toFile(), "fileToCommit")
         fileToCommit.createNewFile()
         gitRepo.add().addFilepattern(fileToCommit.name).call()
