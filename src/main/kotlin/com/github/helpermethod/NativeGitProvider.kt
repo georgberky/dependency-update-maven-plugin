@@ -24,7 +24,13 @@ class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     }
 
     override fun commit(author: String, message: String) {
-        TODO("Not yet implemented")
+        val process = ProcessBuilder("git", "commit", "-m", message, "--author='${author}'")
+                .directory(localRepositoryDirectory.toFile())
+                .start()
+
+        val returnValue = process.waitFor()
+
+        //TODO: handle non-zero return values
     }
 
     override fun push(branchName: String) {
