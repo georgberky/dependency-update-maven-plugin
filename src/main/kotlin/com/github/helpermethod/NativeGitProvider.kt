@@ -4,7 +4,7 @@ import org.apache.commons.io.IOUtils
 import java.nio.file.Path
 
 class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
-    //TODO: find the right path to git
+    //TODO: find the right path to git command
 
     override fun hasRemoteBranch(remoteBranchName: String): Boolean {
         val process = ProcessBuilder("git", "branch", "--all")
