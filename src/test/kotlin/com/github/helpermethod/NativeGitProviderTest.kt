@@ -59,4 +59,13 @@ class NativeGitProviderTest {
                 .extracting("authorIdent.name", "authorIdent.emailAddress", "shortMessage")
                 .isEqualTo(listOf("Sandra Parsick", "sandra@email.com", "Hello George"))
     }
+
+    @Test
+    @DisplayName("can checkout")
+    internal fun canCheckoutNewBranch() {
+        providerUnderTest.checkoutNewBranch("newBranch")
+
+        assertThat(gitRepo.repository.branch).isEqualTo("newBranch")
+
+    }
 }

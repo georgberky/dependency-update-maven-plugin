@@ -14,12 +14,12 @@ class JGitProvider(val git: Git, val connection: String, val settings: Settings)
     override fun hasRemoteBranch(branchName: String) =
             git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call().none { it.name == "refs/remotes/origin/$branchName" }
 
-    override fun checkout(branchName: String) {
+    override fun checkoutNewBranch(newBranchName: String) {
         git
                 .checkout()
                 .setStartPoint(git.repository.fullBranch)
                 .setCreateBranch(true)
-                .setName(branchName)
+                .setName(newBranchName)
                 .call()
 
     }

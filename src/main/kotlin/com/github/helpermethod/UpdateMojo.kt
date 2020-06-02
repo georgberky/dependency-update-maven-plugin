@@ -51,7 +51,7 @@ class UpdateMojo : AbstractMojo() {
             .map { it to "dependency-update/${it.groupId}-${it.artifactId}-${it.latestVersion}" }
             .filter { (_, branchName) -> git.hasRemoteBranch(branchName) }
             .forEach { (update, branchName) ->
-                git.checkout(branchName)
+                git.checkoutNewBranch(branchName)
                 val pom = update.updatedPom()
                 mavenProject.file.writeText(pom.html())
                 git.add("pom.xml")
