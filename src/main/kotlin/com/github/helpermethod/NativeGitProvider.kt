@@ -1,12 +1,21 @@
 package com.github.helpermethod
 
+import org.apache.commons.io.IOUtils
 import java.nio.file.Path
 
 class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     //TODO: find the right path to git
 
-    override fun hasRemoteBranch(branchName: String): Boolean {
-        TODO("Not yet implemented")
+    override fun hasRemoteBranch(remoteBranchName: String): Boolean {
+        val process = ProcessBuilder("git", "branch", "--all")
+                .directory(localRepositoryDirectory.toFile())
+                .start()
+
+        val returnValue = process.waitFor()
+        //TODO: handle non-zero return values
+
+        val processOutput = IOUtils.toString(process.inputStream)
+        return processOutput.contains("remotes/origin/" + remoteBranchName)
     }
 
     override fun checkoutNewBranch(newBranchName: String) {

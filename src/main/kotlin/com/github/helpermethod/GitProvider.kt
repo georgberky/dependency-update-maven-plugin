@@ -2,7 +2,7 @@ package com.github.helpermethod
 
 interface GitProvider : AutoCloseable {
 
-    fun hasRemoteBranch(branchName: String) : Boolean
+    fun hasRemoteBranch(remoteBranchName: String) : Boolean
 
     fun checkoutNewBranch(branchName: String)
     fun add(filePattern: String)

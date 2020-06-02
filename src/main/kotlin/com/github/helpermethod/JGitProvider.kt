@@ -11,8 +11,8 @@ import org.eclipse.jgit.util.FS
 
 // TODO: interaction test
 class JGitProvider(val git: Git, val connection: String, val settings: Settings) : GitProvider {
-    override fun hasRemoteBranch(branchName: String) =
-            git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call().none { it.name == "refs/remotes/origin/$branchName" }
+    override fun hasRemoteBranch(remoteBranchName: String) =
+            git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call().none { it.name == "refs/remotes/origin/$remoteBranchName" }
 
     override fun checkoutNewBranch(newBranchName: String) {
         git
