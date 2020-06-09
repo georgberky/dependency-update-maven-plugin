@@ -3,7 +3,7 @@ package com.github.helpermethod
 import org.apache.commons.io.IOUtils
 import java.nio.file.Path
 
-class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
+open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     //TODO: find the right path to git command
 
     override fun hasRemoteBranch(remoteBranchName: String): Boolean {
@@ -23,9 +23,14 @@ class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     }
 
     override fun add(filePattern: String) {
-        val returnValue = runInProcess("git", "add", filePattern)
+        val command = arrayOf("git", "add", filePattern)
+        val returnValue = runInProcess(*command)
 
-        //TODO: handle non-zero return values
+        if(returnValue != 0) {
+            throw ProcessException("Native git invocation failed. " +
+                    "Command: ${command.joinToString(" ")}, " +
+                    "return value was: $returnValue")
+        }
     }
 
     override fun commit(author: String, message: String) {
@@ -49,7 +54,7 @@ class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
         return runInProcessWithOutput(*command).first
     }
 
-    fun runInProcessWithOutput(vararg command: String): Pair<Int, String> {
+    open fun runInProcessWithOutput(vararg command: String): Pair<Int, String> {
         val process = ProcessBuilder(*command)
                 .directory(localRepositoryDirectory.toFile())
                 .start()
@@ -58,5 +63,9 @@ class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
         val processOutput = IOUtils.toString(process.inputStream)
 
         return Pair(returnValue, processOutput)
+    }
+
+    class ProcessException(message: String?) : RuntimeException(message) {
+
     }
 }
