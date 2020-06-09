@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.net.URI
+import java.util.stream.Collectors.toList
 
 class NativeGitProviderTest {
 
@@ -80,6 +81,23 @@ class NativeGitProviderTest {
         val hasRemoteBranch = providerUnderTest.hasRemoteBranch("myNewRemoteBranch");
 
         assertThat(hasRemoteBranch).isTrue();
+    }
+
+    @Test
+    internal fun `push change to remote repository`(){
+        val fileToCommit = File(localGitDirectory, "fileToCommit")
+        fileToCommit.createNewFile()
+        localGitRepo.branchCreate().setName("newBranch").call()
+        localGitRepo.checkout().setName("newBranch").call()
+        localGitRepo.add().addFilepattern(fileToCommit.name).call()
+        localGitRepo.commit().setAuthor("Georg", "georg@email.com").setMessage("init").call()
+
+        providerUnderTest.push("newBranch")
+
+        val branchList = remoteGitRepo.branchList().call().stream()
+                                                                                .map { it.name }
+                                                                                .collect(toList())
+        assertThat(branchList).contains("refs/heads/newBranch")
     }
 
     private fun setupLocalGitRepoAsCloneOf(remoteGitDirectory: URI) {
