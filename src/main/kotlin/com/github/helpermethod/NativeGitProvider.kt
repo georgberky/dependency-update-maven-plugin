@@ -7,54 +7,35 @@ class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     //TODO: find the right path to git command
 
     override fun hasRemoteBranch(remoteBranchName: String): Boolean {
-        val process = ProcessBuilder("git", "branch", "--all")
-                .directory(localRepositoryDirectory.toFile())
-                .start()
+        val processResult = runInProcessWithOutput("git", "branch", "--all")
 
-        val returnValue = process.waitFor()
-        //TODO: handle non-zero return values
+        val returnValue = processResult.first
+        val processOutput = processResult.second
 
-        val processOutput = IOUtils.toString(process.inputStream)
         return processOutput.contains("remotes/origin/" + remoteBranchName)
     }
 
     override fun checkoutNewBranch(newBranchName: String) {
-        val process = ProcessBuilder("git", "checkout", "-b", newBranchName)
-                .directory(localRepositoryDirectory.toFile())
-                .start()
-
-        val returnValue = process.waitFor()
+        val returnValue = runInProcess("git", "checkout", "-b", newBranchName)
 
         //TODO: handle non-zero return values
 
     }
 
     override fun add(filePattern: String) {
-        val process = ProcessBuilder("git", "add", filePattern)
-                .directory(localRepositoryDirectory.toFile())
-                .start()
-
-        val returnValue = process.waitFor()
+        val returnValue = runInProcess("git", "add", filePattern)
 
         //TODO: handle non-zero return values
     }
 
     override fun commit(author: String, message: String) {
-        val process = ProcessBuilder("git", "commit", "-m", message, "--author='${author}'")
-                .directory(localRepositoryDirectory.toFile())
-                .start()
-
-        val returnValue = process.waitFor()
+        val result = runInProcess("git", "commit", "-m", message, "--author='${author}'")
 
         //TODO: handle non-zero return values
     }
 
     override fun push(localBranchName: String) {
-       val process = ProcessBuilder("git", "push", "--set-upstream", "origin", localBranchName)
-               .directory(localRepositoryDirectory.toFile())
-               .start()
-
-        val returnValue = process.waitFor()
+        val returnValue = runInProcess("git", "push", "--set-upstream", "origin", localBranchName)
 
         //TODO: handle non-zero return values
 
@@ -62,5 +43,20 @@ class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
 
     override fun close() {
         // no needed for native git
+    }
+
+    private fun runInProcess(vararg command: String): Int {
+        return runInProcessWithOutput(*command).first
+    }
+
+    fun runInProcessWithOutput(vararg command: String): Pair<Int, String> {
+        val process = ProcessBuilder(*command)
+                .directory(localRepositoryDirectory.toFile())
+                .start()
+
+        val returnValue = process.waitFor()
+        val processOutput = IOUtils.toString(process.inputStream)
+
+        return Pair(returnValue, processOutput)
     }
 }
