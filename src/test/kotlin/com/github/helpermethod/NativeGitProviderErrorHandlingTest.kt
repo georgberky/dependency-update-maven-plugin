@@ -34,11 +34,12 @@ internal class NativeGitProviderErrorHandlingTest {
                 .isInstanceOf(NativeGitProvider.ProcessException::class.java)
                 .hasMessageContaining("return value")
                 .hasMessageContaining("-1")
-                .hasMessageContaining("git add")
+                .hasMessageContaining("git")
+                .hasMessageContaining("add")
     }
 
     @Test
-    internal fun `error handling for checkout new branch`(){
+    internal fun `error handling for checkout new branch`() {
         returnValue = -1
 
         val callCheckoutNewBranch = { gitProvider.checkoutNewBranch("newBranch") }
@@ -47,49 +48,53 @@ internal class NativeGitProviderErrorHandlingTest {
                 .isInstanceOf(NativeGitProvider.ProcessException::class.java)
                 .hasMessageContaining("return value")
                 .hasMessageContaining("-1")
-                .hasMessageContaining("git checkout")
+                .hasMessageContaining("git")
+                .hasMessageContaining("checkout")
                 .hasMessageContaining("newBranch")
     }
 
     @Test
-    internal fun `error handling for a remote branch checking` (){
+    internal fun `error handling for a remote branch checking`() {
         returnValue = -1
 
-        val callHasRemoteBranch : () -> Unit = { gitProvider.hasRemoteBranch("remoteBranch")}
+        val callHasRemoteBranch: () -> Unit = { gitProvider.hasRemoteBranch("remoteBranch") }
 
         assertThatThrownBy(callHasRemoteBranch)
                 .isInstanceOf(NativeGitProvider.ProcessException::class.java)
                 .hasMessageContaining("return value")
                 .hasMessageContaining("-1")
-                .hasMessageContaining("git branch")
+                .hasMessageContaining("git")
+                .hasMessageContaining("branch")
     }
 
     @Test
-    internal fun `error handling for commit`(){
+    internal fun `error handling for commit`() {
         returnValue = -1
 
-        val callCommit : () -> Unit = { gitProvider.commit("Georg Berky", "a commit message")}
+        val callCommit: () -> Unit = { gitProvider.commit("Georg Berky", "a commit message") }
 
         assertThatThrownBy(callCommit)
                 .isInstanceOf(NativeGitProvider.ProcessException::class.java)
                 .hasMessageContaining("return value")
                 .hasMessageContaining("-1")
-                .hasMessageContaining("git commit")
+                .hasMessageContaining("git")
+                .hasMessageContaining("commit")
                 .hasMessageContaining("Georg Berky")
                 .hasMessageContaining("a commit message")
     }
 
     @Test
-    internal fun `error handling for push`(){
+    internal fun `error handling for push`() {
         returnValue = -1
 
-        val callPush : () -> Unit = { gitProvider.push("localBranch")}
+        val callPush: () -> Unit = { gitProvider.push("localBranch") }
 
         assertThatThrownBy(callPush)
                 .isInstanceOf(NativeGitProvider.ProcessException::class.java)
                 .hasMessageContaining("return value")
                 .hasMessageContaining("-1")
-                .hasMessageContaining("git push")
+                .hasMessageContaining("git")
+                .hasMessageContaining("push")
                 .hasMessageContaining("localBranch")
     }
 }

@@ -4,28 +4,35 @@ import org.apache.commons.io.IOUtils
 import java.nio.file.Path
 
 open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
-    //TODO: find the right path to git command
+
+    private val gitCommand: String by lazy {
+        val process = ProcessBuilder("which", "git")
+                .start()
+
+        process.waitFor()
+        IOUtils.toString(process.inputStream)
+    }
 
     override fun hasRemoteBranch(remoteBranchName: String): Boolean {
-        val processResult = runInProcessWithOutput("git", "branch", "--all")
+        val processResult = runInProcessWithOutput(gitCommand, "branch", "--all")
         val processOutput = processResult.second
         return processOutput.contains("remotes/origin/" + remoteBranchName)
     }
 
     override fun checkoutNewBranch(newBranchName: String) {
-        runInProcess("git", "checkout", "-b", newBranchName)
+        runInProcess(gitCommand, "checkout", "-b", newBranchName)
     }
 
     override fun add(filePattern: String) {
-        runInProcess("git", "add", filePattern)
+        runInProcess(gitCommand, "add", filePattern)
     }
 
     override fun commit(author: String, message: String) {
-        runInProcess("git", "commit", "-m", message, "--author='${author}'")
+        runInProcess(gitCommand, "commit", "-m", message, "--author='${author}'")
     }
 
     override fun push(localBranchName: String) {
-        runInProcess("git", "push", "--set-upstream", "origin", localBranchName)
+        runInProcess(gitCommand, "push", "--set-upstream", "origin", localBranchName)
     }
 
     override fun close() {
@@ -50,6 +57,7 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     }
 
     open fun run(vararg command: String): Pair<Int, String> {
+
         val process = ProcessBuilder(*command)
                 .directory(localRepositoryDirectory.toFile())
                 .start()
