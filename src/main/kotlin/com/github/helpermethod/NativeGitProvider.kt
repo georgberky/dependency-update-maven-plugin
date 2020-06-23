@@ -7,64 +7,25 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     //TODO: find the right path to git command
 
     override fun hasRemoteBranch(remoteBranchName: String): Boolean {
-        val command = arrayOf("git", "branch", "--all")
         val processResult = runInProcessWithOutput("git", "branch", "--all")
-
-        val returnValue = processResult.first
-        if(returnValue != 0) {
-            throw ProcessException("Native git invocation failed. " +
-                    "Command: ${command.joinToString(" ")}, " +
-                    "return value was: $returnValue")
-        }
-
-
         val processOutput = processResult.second
         return processOutput.contains("remotes/origin/" + remoteBranchName)
     }
 
     override fun checkoutNewBranch(newBranchName: String) {
-        val command = arrayOf("git", "checkout", "-b", newBranchName)
-        val returnValue = runInProcess(*command)
-
-        if(returnValue != 0) {
-            throw ProcessException("Native git invocation failed. " +
-                    "Command: ${command.joinToString(" ")}, " +
-                    "return value was: $returnValue")
-        }
+        runInProcess("git", "checkout", "-b", newBranchName)
     }
 
     override fun add(filePattern: String) {
-        val command = arrayOf("git", "add", filePattern)
-        val returnValue = runInProcess(*command)
-
-        if(returnValue != 0) {
-            throw ProcessException("Native git invocation failed. " +
-                    "Command: ${command.joinToString(" ")}, " +
-                    "return value was: $returnValue")
-        }
+        runInProcess("git", "add", filePattern)
     }
 
     override fun commit(author: String, message: String) {
-        val command = arrayOf("git", "commit", "-m", message, "--author='${author}'")
-        val returnValue = runInProcess(*command)
-
-        if(returnValue != 0) {
-            throw ProcessException("Native git invocation failed. " +
-                    "Command: ${command.joinToString(" ")}, " +
-                    "return value was: $returnValue")
-        }
+        runInProcess("git", "commit", "-m", message, "--author='${author}'")
     }
 
     override fun push(localBranchName: String) {
-        val command = arrayOf("git", "push", "--set-upstream", "origin", localBranchName)
-        val returnValue = runInProcess(*command)
-
-        if(returnValue != 0) {
-            throw ProcessException("Native git invocation failed. " +
-                    "Command: ${command.joinToString(" ")}, " +
-                    "return value was: $returnValue")
-        }
-
+        runInProcess("git", "push", "--set-upstream", "origin", localBranchName)
     }
 
     override fun close() {
@@ -75,14 +36,26 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
         return runInProcessWithOutput(*command).first
     }
 
-    open fun runInProcessWithOutput(vararg command: String): Pair<Int, String> {
+    private fun runInProcessWithOutput(vararg command: String): Pair<Int, String> {
+        val result = run(*command)
+        val returnValue = result.first
+
+        if(returnValue != 0) {
+            throw ProcessException("Native git invocation failed. " +
+                    "Command: ${command.joinToString(" ")}, " +
+                    "return value was: $returnValue")
+        }
+
+        return result
+    }
+
+    open fun run(vararg command: String): Pair<Int, String> {
         val process = ProcessBuilder(*command)
                 .directory(localRepositoryDirectory.toFile())
                 .start()
 
         val returnValue = process.waitFor()
         val processOutput = IOUtils.toString(process.inputStream)
-
         return Pair(returnValue, processOutput)
     }
 

@@ -18,7 +18,7 @@ internal class NativeGitProviderErrorHandlingTest {
     @BeforeEach
     internal fun setUp() {
         gitProvider = object : NativeGitProvider(tempDir.toPath()) {
-            override fun runInProcessWithOutput(vararg command: String): Pair<Int, String> {
+            override fun run(vararg command: String): Pair<Int, String> {
                 return Pair(returnValue, processOutput)
             }
         }
