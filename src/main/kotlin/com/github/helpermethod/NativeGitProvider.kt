@@ -16,10 +16,14 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     }
 
     override fun checkoutNewBranch(newBranchName: String) {
-        val returnValue = runInProcess("git", "checkout", "-b", newBranchName)
+        val command = arrayOf("git", "checkout", "-b", newBranchName)
+        val returnValue = runInProcess(*command)
 
-        //TODO: handle non-zero return values
-
+        if(returnValue != 0) {
+            throw ProcessException("Native git invocation failed. " +
+                    "Command: ${command.joinToString(" ")}, " +
+                    "return value was: $returnValue")
+        }
     }
 
     override fun add(filePattern: String) {

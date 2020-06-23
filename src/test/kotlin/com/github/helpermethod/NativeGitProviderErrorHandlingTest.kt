@@ -1,8 +1,6 @@
 package com.github.helpermethod
 
-import org.assertj.core.api.Assertions.assertThatCode
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -27,7 +25,7 @@ internal class NativeGitProviderErrorHandlingTest {
     }
 
     @Test
-    internal fun `error handling`() {
+    internal fun `error handling for add`() {
         returnValue = -1
 
         val callAdd = { gitProvider.add("") }
@@ -37,6 +35,20 @@ internal class NativeGitProviderErrorHandlingTest {
                 .hasMessageContaining("return value")
                 .hasMessageContaining("-1")
                 .hasMessageContaining("git add")
+    }
+
+    @Test
+    internal fun `error handling for checkout new branch`(){
+        returnValue = -1
+
+        val callCheckoutNewBranch = { gitProvider.checkoutNewBranch("newBranch") }
+
+        assertThatThrownBy(callCheckoutNewBranch)
+                .isInstanceOf(NativeGitProvider.ProcessException::class.java)
+                .hasMessageContaining("return value")
+                .hasMessageContaining("-1")
+                .hasMessageContaining("git checkout")
+                .hasMessageContaining("newBranch")
     }
 }
 
