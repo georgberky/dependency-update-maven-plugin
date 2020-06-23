@@ -78,5 +78,19 @@ internal class NativeGitProviderErrorHandlingTest {
                 .hasMessageContaining("Georg Berky")
                 .hasMessageContaining("a commit message")
     }
+
+    @Test
+    internal fun `error handling for push`(){
+        returnValue = -1
+
+        val callPush : () -> Unit = { gitProvider.push("localBranch")}
+
+        assertThatThrownBy(callPush)
+                .isInstanceOf(NativeGitProvider.ProcessException::class.java)
+                .hasMessageContaining("return value")
+                .hasMessageContaining("-1")
+                .hasMessageContaining("git push")
+                .hasMessageContaining("localBranch")
+    }
 }
 
