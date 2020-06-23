@@ -7,11 +7,18 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     //TODO: find the right path to git command
 
     override fun hasRemoteBranch(remoteBranchName: String): Boolean {
+        val command = arrayOf("git", "branch", "--all")
         val processResult = runInProcessWithOutput("git", "branch", "--all")
 
         val returnValue = processResult.first
-        val processOutput = processResult.second
+        if(returnValue != 0) {
+            throw ProcessException("Native git invocation failed. " +
+                    "Command: ${command.joinToString(" ")}, " +
+                    "return value was: $returnValue")
+        }
 
+
+        val processOutput = processResult.second
         return processOutput.contains("remotes/origin/" + remoteBranchName)
     }
 

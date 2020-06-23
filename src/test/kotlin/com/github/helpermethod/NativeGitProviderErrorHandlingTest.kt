@@ -1,6 +1,7 @@
 package com.github.helpermethod
 
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.api.ThrowableAssert
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -49,6 +50,19 @@ internal class NativeGitProviderErrorHandlingTest {
                 .hasMessageContaining("-1")
                 .hasMessageContaining("git checkout")
                 .hasMessageContaining("newBranch")
+    }
+
+    @Test
+    internal fun `error handling for a remote branch checking` (){
+        returnValue = -1
+
+        val callHasRemoteBranch : () -> Unit = { gitProvider.hasRemoteBranch("remoteBranch")}
+
+        assertThatThrownBy(callHasRemoteBranch)
+                .isInstanceOf(NativeGitProvider.ProcessException::class.java)
+                .hasMessageContaining("return value")
+                .hasMessageContaining("-1")
+                .hasMessageContaining("git branch")
     }
 }
 
