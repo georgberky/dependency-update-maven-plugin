@@ -45,9 +45,14 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     }
 
     override fun commit(author: String, message: String) {
-        val result = runInProcess("git", "commit", "-m", message, "--author='${author}'")
+        val command = arrayOf("git", "commit", "-m", message, "--author='${author}'")
+        val returnValue = runInProcess("git", "commit", "-m", message, "--author='${author}'")
 
-        //TODO: handle non-zero return values
+        if(returnValue != 0) {
+            throw ProcessException("Native git invocation failed. " +
+                    "Command: ${command.joinToString(" ")}, " +
+                    "return value was: $returnValue")
+        }
     }
 
     override fun push(localBranchName: String) {

@@ -1,7 +1,6 @@
 package com.github.helpermethod
 
 import org.assertj.core.api.Assertions.assertThatThrownBy
-import org.assertj.core.api.ThrowableAssert
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -63,6 +62,21 @@ internal class NativeGitProviderErrorHandlingTest {
                 .hasMessageContaining("return value")
                 .hasMessageContaining("-1")
                 .hasMessageContaining("git branch")
+    }
+
+    @Test
+    internal fun `error handling for commit`(){
+        returnValue = -1
+
+        val callCommit : () -> Unit = { gitProvider.commit("Georg Berky", "a commit message")}
+
+        assertThatThrownBy(callCommit)
+                .isInstanceOf(NativeGitProvider.ProcessException::class.java)
+                .hasMessageContaining("return value")
+                .hasMessageContaining("-1")
+                .hasMessageContaining("git commit")
+                .hasMessageContaining("Georg Berky")
+                .hasMessageContaining("a commit message")
     }
 }
 
