@@ -11,9 +11,6 @@ import org.apache.maven.project.MavenProject
 import org.apache.maven.settings.Settings
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.RepositoryBuilder
-import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
-import org.jsoup.parser.Parser.xmlParser
 
 @Mojo(name = "update")
 class UpdateMojo : AbstractMojo() {
@@ -44,17 +41,19 @@ class UpdateMojo : AbstractMojo() {
     override fun execute() {
         withGit { git ->
             UpdateResolver(
-                mavenProject = mavenProject,
-                artifactMetadataSource = artifactMetadataSource,
-                localRepository = localRepository,
-                createDependency = artifactFactory::createDependencyArtifact
+                    mavenProject = mavenProject,
+                    artifactMetadataSource = artifactMetadataSource,
+                    localRepository = localRepository,
+                    artifactFactory = artifactFactory
             )
             .updates
+            .filter(VersionUpdate::canSkip)
             .map { it to "dependency-update/${it.groupId}-${it.artifactId}-${it.latestVersion}" }
             .filter { (_, branchName) -> git.hasRemoteBranch(branchName) }
             .forEach { (update, branchName) ->
                 git.checkout(branchName)
-                withPom(update.modification)
+                val pom = update.updatedPom()
+                mavenProject.file.writeText(pom.html())
                 git.add("pom.xml")
                 git.commit(
                     "dependency-update-bot",
@@ -77,15 +76,5 @@ class UpdateMojo : AbstractMojo() {
         )
 
         git.use(f)
-    }
-
-    private fun withPom(f: (Document) -> Unit) {
-        val pom = Jsoup.parse(mavenProject.file.readText(), "", xmlParser()).apply {
-            outputSettings().prettyPrint(false)
-        }
-
-        f(pom)
-
-        mavenProject.file.writeText(pom.html())
     }
 }
