@@ -6,11 +6,20 @@ import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand
 import org.eclipse.jgit.api.TransportConfigCallback
 import org.eclipse.jgit.lib.PersonIdent
+import org.eclipse.jgit.lib.RepositoryBuilder
 import org.eclipse.jgit.transport.*
 import org.eclipse.jgit.util.FS
+import java.nio.file.Path
 
 // TODO: interaction test
-class JGitProvider(val git: Git, val connection: String, val settings: Settings) : GitProvider {
+class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connection: String) : GitProvider {
+    val git : Git = Git(
+            RepositoryBuilder()
+                    .readEnvironment()
+                    .findGitDir(localRepositoryPath.toFile())
+                    .setMustExist(true)
+                    .build())
+
     override fun hasRemoteBranch(remoteBranchName: String) =
             git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call().none { it.name == "refs/remotes/origin/$remoteBranchName" }
 

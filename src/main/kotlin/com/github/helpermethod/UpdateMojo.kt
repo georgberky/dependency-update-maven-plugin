@@ -9,8 +9,6 @@ import org.apache.maven.plugins.annotations.Mojo
 import org.apache.maven.plugins.annotations.Parameter
 import org.apache.maven.project.MavenProject
 import org.apache.maven.settings.Settings
-import org.eclipse.jgit.api.Git
-import org.eclipse.jgit.lib.RepositoryBuilder
 
 @Mojo(name = "update")
 class UpdateMojo : AbstractMojo() {
@@ -30,6 +28,9 @@ class UpdateMojo : AbstractMojo() {
     lateinit var developerConnectionUrl: String
     @Parameter(property = "connectionType", defaultValue = "connection", required = true)
     lateinit var connectionType: String
+    @Parameter(property = "dependencyUpdate.git.provider", defaultValue="native", required = false)
+    lateinit var gitProvider : GitProviderChoice
+
     @Component
     lateinit var artifactFactory: ArtifactFactory
     @Component
@@ -65,16 +66,7 @@ class UpdateMojo : AbstractMojo() {
     }
 
     private fun withGit(f: (GitProvider) -> Unit) {
-        val git = JGitProvider(
-            Git(
-                RepositoryBuilder()
-                    .readEnvironment()
-                    .findGitDir(mavenProject.basedir)
-                    .setMustExist(true)
-                    .build()
-            ), connection, settings
-        )
-
+        val git = gitProvider.createProvider(mavenProject.basedir.toPath(), settings, connection);
         git.use(f)
     }
 }
