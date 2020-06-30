@@ -1,6 +1,7 @@
 package com.github.helpermethod
 
 import org.apache.commons.io.IOUtils
+import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 
 open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
@@ -10,7 +11,7 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
                 .start()
 
         process.waitFor()
-        IOUtils.toString(process.inputStream)
+        IOUtils.toString(process.inputStream, StandardCharsets.UTF_8).trim()
     }
 
     override fun hasRemoteBranch(remoteBranchName: String): Boolean {
