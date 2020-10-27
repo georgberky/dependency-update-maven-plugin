@@ -18,17 +18,13 @@ class UpdateMojo : AbstractMojo() {
     lateinit var localRepository: ArtifactRepository
     @Parameter(defaultValue = "\${settings}", required = true)
     lateinit var settings: Settings
-    @Parameter(property = "connectionUrl", defaultValue = "\${project.scm.connection}", required = true)
+    @Parameter(property = "connectionUrl", defaultValue = "\${project.scm.connection}")
     lateinit var connectionUrl: String
-    @Parameter(
-        property = "developerConnectionUrl",
-        defaultValue = "\${project.scm.developerConnection}",
-        required = true
-    )
+    @Parameter(property = "developerConnectionUrl", defaultValue = "\${project.scm.developerConnection}")
     lateinit var developerConnectionUrl: String
     @Parameter(property = "connectionType", defaultValue = "connection", required = true)
     lateinit var connectionType: String
-    @Parameter(property = "dependencyUpdate.git.provider", defaultValue="native", required = false)
+    @Parameter(property = "dependencyUpdate.git.provider", defaultValue="NATIVE", required = false)
     lateinit var gitProvider : GitProviderChoice
 
     @Component
