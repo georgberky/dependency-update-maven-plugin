@@ -3,6 +3,7 @@ package com.github.helpermethod
 import com.soebes.itf.jupiter.extension.*
 import com.soebes.itf.extension.assertj.MavenExecutionResultAssert.assertThat as mavenAssertThat
 import com.soebes.itf.jupiter.maven.MavenExecutionResult
+import com.soebes.itf.jupiter.maven.MavenProjectResult
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.jgit.api.Git
@@ -13,29 +14,26 @@ import java.util.stream.Collectors.toList
 @MavenJupiterExtension
 @MavenProject("nativeProviderIsSet")
 internal class UpdateMojoNativeGitIT {
-    //TODO: add test for making connectionUrl or developerConnection mandatory only if provider == JGIT
-    lateinit var repo : Git
+    lateinit var repo: Git
 
     @BeforeEach
-    internal fun setUp() {
-        val baseDir = File(System.getProperty("basedir", System.getProperty("user.dir", ".")), "target/maven-it")
-        val repoPath = File(baseDir, this.javaClass.name.replace('.', '/') + "/nativeProviderIsSet/project")
+    internal fun setUp(result: MavenProjectResult) {
+        repo =  Git.open(result.targetProjectDirectory)
 
-        repo = Git.init()
-                .setDirectory(repoPath)
-                .call()
-
-        repo.add().addFilepattern(".").call()
-        repo.commit().setAuthor("Schorsch", "georg@email.com").setMessage("initial commit").call()
-
-        assertThat(repo.status().call().isClean).isTrue()
+        repo.add().addFilepattern(".").call();
+        repo.commit().setAuthor("Schorsch", "georg@email.com").setMessage("interpolate version").call()
     }
 
     @MavenTest
+    @MavenDebug
     @MavenGoal("\${project.groupId}:\${project.artifactId}:\${project.version}:update")
     fun nativeProviderIsSet(result: MavenExecutionResult) {
-        mavenAssertThat(result).isSuccessful()
+
         val branchList = repo.branchList().call().stream().map { it.name }.collect(toList())
+
+        mavenAssertThat(result)
+                .describedAs("the build should have been successful")
+                .isSuccessful()
 
         assertThat(branchList)
                 .describedAs("feature branch for junit-jupiter should be created")
