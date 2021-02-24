@@ -1,15 +1,14 @@
 package com.github.helpermethod
 
 import com.soebes.itf.jupiter.extension.*
-import com.soebes.itf.extension.assertj.MavenExecutionResultAssert.assertThat as mavenAssertThat
 import com.soebes.itf.jupiter.maven.MavenExecutionResult
 import com.soebes.itf.jupiter.maven.MavenProjectResult
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.jgit.api.Git
 import org.junit.jupiter.api.BeforeEach
-import java.io.File
+import org.junit.jupiter.api.Test
 import java.util.stream.Collectors.toList
+import com.soebes.itf.extension.assertj.MavenExecutionResultAssert.assertThat as mavenAssertThat
 
 @MavenJupiterExtension
 @MavenProject("nativeProviderIsSet")
@@ -18,10 +17,10 @@ internal class UpdateMojoNativeGitIT {
 
     @BeforeEach
     internal fun setUp(result: MavenProjectResult) {
-        repo =  Git.open(result.targetProjectDirectory)
+        repo = Git.init().setDirectory(result.targetProjectDirectory).call()
 
         repo.add().addFilepattern(".").call();
-        repo.commit().setAuthor("Schorsch", "georg@email.com").setMessage("interpolate version").call()
+        repo.commit().setAuthor("Schorsch", "georg@email.com").setMessage("Initial commit.").call()
     }
 
     @MavenTest
