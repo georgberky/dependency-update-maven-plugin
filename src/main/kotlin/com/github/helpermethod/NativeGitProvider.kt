@@ -29,7 +29,7 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     }
 
     override fun commit(author: String, message: String) {
-        runInProcess(gitCommand, "commit", "-m", message, "--author='${author}'")
+        runInProcess(gitCommand, "commit", "-m", message, "--author='${author} <test@test.org>'")
     }
 
     override fun push(localBranchName: String) {

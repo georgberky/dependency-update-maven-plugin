@@ -3,12 +3,14 @@ package com.github.helpermethod
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.jgit.api.Git
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.net.URI
 import java.util.stream.Collectors.toList
 
+@Disabled("Not working locally.")
 class NativeGitProviderTest {
 
     @TempDir
