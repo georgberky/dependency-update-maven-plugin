@@ -97,8 +97,8 @@ class NativeGitProviderTest {
         providerUnderTest.push("newBranch")
 
         val branchList = remoteGitRepo.branchList().call().stream()
-                                                                                .map { it.name }
-                                                                                .collect(toList())
+            .map { it.name }
+            .collect(toList())
         assertThat(branchList).contains("refs/heads/newBranch")
     }
 
