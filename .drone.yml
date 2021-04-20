@@ -1,0 +1,15 @@
+---
+kind: pipeline
+name: linux-pipeline-jdk8
+type: docker
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+  - name: mavenjdk8
+    pull: always
+    image: docker.io/maven:3.6.3-jdk-8-slim
+    commands:
+      - mvn -V clean verify --fail-at-end --batch-mode
