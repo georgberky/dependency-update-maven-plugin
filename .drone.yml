@@ -16,6 +16,7 @@ steps:
   - name: coverage
     image: plugins/codecov:v2.0.3
     settings:
-      token: {{ codecov-token }}
+      token:
+        from_secret: codecov-token
       files:
         - target/site/jacoco/jacoco.xml
