@@ -1,7 +1,6 @@
 # Dependency Update Maven Plugin
 
-[![Maven Central](https://img.shields.io/maven-central/v/com.github.helpermethod/dependency-update-maven-plugin.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22com.github.helpermethod%22%20AND%20a:%22dependency-update-maven-plugin%22)
-[![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/helpermethod/dependency-update-maven-plugin/master/LICENSE)
+[![Build Status](https://cloud.drone.io/api/badges/georgberky/dependency-update-maven-plugin/status.svg)](https://cloud.drone.io/georgberky/dependency-update-maven-plugin)
 
 The `Dependency Update Maven Plugin` analyzes the dependencies of your Maven project.
 
