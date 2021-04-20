@@ -1,14 +1,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.github.helpermethod</groupId>
+    <groupId>com.github.georgberky.maven.plugins.depsupdate</groupId>
     <artifactId>dependency-update-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
     <version>0.6.0</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>The Dependency Update Maven plugin creates merge requests for dependency updates.</description>
-    <url>https://github.com/helpermethod/dependency-update-maven-plugin</url>
+    <url>https://github.com/georgberky/dependency-update-maven-plugin</url>
 
     <licenses>
         <license>
@@ -22,23 +22,35 @@
             <name>Oliver Weiler</name>
             <email>wo6980@gmail.com</email>
         </developer>
+        <developer>
+            <name>Sandra Parsick</name>
+            <email>mail@sandra-parsick.de</email>
+        </developer>
+        <developer>
+            <name>Karl Heinz Marbaise</name>
+            <email>kama@soebes.de</email>
+        </developer>
+        <developer>
+            <name>Georg Berky</name>
+            <email>hallo@berky.dev</email>
+        </developer>
     </developers>
 
     <scm>
-        <connection>scm:git:https://github.com/helpermethod/dependency-update-maven-plugin.git</connection>
-        <developerConnection>scm:git:https://github.com/helpermethod/dependency-update-maven-plugin.git
+        <connection>scm:git:https://github.com/georgberky/dependency-update-maven-plugin.git</connection>
+        <developerConnection>scm:git:https://github.com/georgberky/dependency-update-maven-plugin.git
         </developerConnection>
-        <url>https://github.com/helpermethod/dependency-update-maven-plugin</url>
+        <url>https://github.com/georgberky/dependency-update-maven-plugin</url>
     </scm>
 
     <distributionManagement>
         <snapshotRepository>
             <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
         <repository>
             <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
     </distributionManagement>
 
