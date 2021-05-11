@@ -13,3 +13,10 @@ steps:
     image: docker.io/maven:3.6.3-jdk-8-slim
     commands:
       - mvn -V clean verify --fail-at-end --batch-mode
+  - name: coverage
+    image: plugins/codecov
+    settings:
+      token:
+        from_secret: codecov-token
+      files:
+        - target/site/jacoco/jacoco.xml
