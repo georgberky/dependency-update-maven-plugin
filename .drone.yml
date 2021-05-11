@@ -14,7 +14,7 @@ steps:
     commands:
       - mvn -V clean verify --fail-at-end --batch-mode
   - name: coverage
-    image: plugins/codecov:v2.0.3
+    image: plugins/codecov
     settings:
       token:
         from_secret: codecov-token
