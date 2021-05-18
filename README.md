@@ -18,5 +18,5 @@ If a more recent version of a dependency is found, the plugin will
 ## Quickstart
 
 ```sh
-mvn com.github.helpermethod:dependency-update-maven-plugin:update
+mvn io.github.georgberky.maven.plugins.depsupdate:dependency-update-maven-plugin:update
 ```
