@@ -43,6 +43,7 @@ class UpdateResolver(
     val dependencyUpdates
         get() = mavenProject.originalModel.dependencies
             .filter(Dependency::isConcrete)
+            .onEach { println("dependencyUpdates: $it") }
             .map(artifactFactory::createDependencyArtifact)
             .map { a -> DependencyVersionUpdate(
                     a.groupId,
@@ -54,6 +55,7 @@ class UpdateResolver(
     private fun retrieveLatestVersion(artifact: Artifact) =
         artifactMetadataSource
             .retrieveAvailableVersions(artifact, localRepository, mavenProject.remoteArtifactRepositories)
+            .onEach { println("retrieveLatestVersion: $it") }
             .filter { it.qualifier != "SNAPSHOT" }
             .max()
             .toString()

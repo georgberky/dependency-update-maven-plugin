@@ -12,6 +12,8 @@ steps:
     pull: always
     image: docker.io/maven:3.6.3-jdk-8-slim
     commands:
+      - apt update
+      - apt install git -y
       - mvn -V clean verify --fail-at-end --batch-mode
   - name: coverage
     image: plugins/codecov
