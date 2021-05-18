@@ -2,15 +2,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>io.github.georgberky.maven.plugins.depsupdate</groupId>
-        <artifactId>dependency-update-parent</artifactId>
-        <version>0.6.0</version>
-    </parent>
-
     <groupId>io.github.georgberky.maven.plugins.depsupdate</groupId>
-    <artifactId>dependency-update-maven-plugin</artifactId>
+    <artifactId>native-git-provider-test</artifactId>
     <version>0.6.0</version>
+
+    <scm>
+        <connection>someConnection</connection>
+        <developerConnection>someDeveloperConnection</developerConnection>
+    </scm>
 
     <dependencies>
         <dependency>
@@ -24,5 +23,15 @@
             <version>3.15.0</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>${project.artifactId}</artifactId>
+                <version>${project.version}</version>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
