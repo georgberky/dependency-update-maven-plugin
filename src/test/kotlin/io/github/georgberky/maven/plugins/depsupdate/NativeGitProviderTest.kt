@@ -10,7 +10,6 @@ import java.io.File
 import java.net.URI
 import java.util.stream.Collectors.toList
 
-@Disabled("Not working locally.")
 class NativeGitProviderTest {
 
     @TempDir
