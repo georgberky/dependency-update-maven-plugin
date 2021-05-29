@@ -33,14 +33,14 @@ class UpdateMojo : AbstractMojo() {
     /**
      * Currently, it has to be set, but it is only necessary for the Git provider JGIT.
      */
-    @Parameter(property = "connectionUrl", defaultValue = "\${project.scm.connection}")
-    lateinit var connectionUrl: String
+    @Parameter(property = "connectionUrl", defaultValue = "\${project.scm.connection}", required = false)
+    var connectionUrl: String = ""
 
     /**
      * Currently, it has to be set, but it is only necessary for the Git provider JGIT.
      */
-    @Parameter(property = "developerConnectionUrl", defaultValue = "\${project.scm.developerConnection}")
-    lateinit var developerConnectionUrl: String
+    @Parameter(property = "developerConnectionUrl", defaultValue = "\${project.scm.developerConnection}", required = false)
+    var developerConnectionUrl: String = ""
 
     /**
      * Currently, it has to be set, but it is only necessary for the Git provider JGIT.
