@@ -45,6 +45,6 @@ class ArtifactVersionComparisonTest {
             DefaultArtifactVersion("1.2.0")
         )
 
-        assertThat(versions.max()).isEqualTo(DefaultArtifactVersion("1.3.0"))
+        assertThat(versions.maxOrNull()).isEqualTo(DefaultArtifactVersion("1.3.0"))
     }
 }

@@ -57,7 +57,7 @@ class UpdateResolver(
             .retrieveAvailableVersions(artifact, localRepository, mavenProject.remoteArtifactRepositories)
             .onEach { println("retrieveLatestVersion: $it") }
             .filter { it.qualifier != "SNAPSHOT" }
-            .max()
+            .maxOrNull()
             .toString()
 
     private fun pomXml() : Document {
