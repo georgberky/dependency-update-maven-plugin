@@ -71,7 +71,7 @@ internal class NativeGitProviderErrorHandlingTest {
     internal fun `error handling for commit`() {
         returnValue = -1
 
-        val callCommit: () -> Unit = { gitProvider.commit("Georg Berky", "a commit message") }
+        val callCommit: () -> Unit = { gitProvider.commit("Georg Berky","georg@email.org", "a commit message") }
 
         assertThatThrownBy(callCommit)
                 .isInstanceOf(NativeGitProvider.ProcessException::class.java)

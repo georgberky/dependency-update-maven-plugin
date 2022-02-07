@@ -57,10 +57,11 @@ class UpdateMojo : AbstractMojo() {
                 mavenProject.file.writeText(pom.html())
                 git.add("pom.xml")
                 git.commit(
-                    "dependency-update-bot",
+                    "dependency-update-bot","",
                     "Bump ${update.artifactId} from ${update.version} to ${update.latestVersion}"
                 )
                 git.push(branchName)
+                git.checkoutInitialBranch()
             }
         }
     }
