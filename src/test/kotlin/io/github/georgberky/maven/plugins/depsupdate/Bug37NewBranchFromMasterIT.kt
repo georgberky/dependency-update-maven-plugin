@@ -55,9 +55,11 @@ internal class Bug37NewBranchFromMasterIT {
         val updatedBranchName =  branchList.filter { it.startsWith("refs/heads/dependency-update") }.first()
         repo.checkout().setName(updatedBranchName).call()
 
-        var previousCommit = repo.repository.resolve("HEAD^")
+        val previousCommit = repo.repository.resolve("HEAD^")
 
-        var branchesWithPreviousCommit = repo.branchList().setContains(previousCommit.name()).call().map { it.name }.toList()
+        val branchesWithPreviousCommit = repo.branchList().setContains(previousCommit.name()).call()
+            .map { it.name }
+            .toList()
 
         assertThat(branchesWithPreviousCommit).contains("refs/heads/master")
     }
@@ -78,9 +80,11 @@ internal class Bug37NewBranchFromMasterIT {
         updatedBranchNames.forEach {
             repo.checkout().setName(it).call()
 
-            var previousCommit = repo.repository.resolve("HEAD^")
+            val previousCommit = repo.repository.resolve("HEAD^")
 
-            var branchesWithPreviousCommit = repo.branchList().setContains(previousCommit.name()).call().map { it.name }.toList()
+            val branchesWithPreviousCommit = repo.branchList().setContains(previousCommit.name()).call()
+                .map { it.name }
+                .toList()
 
             assertThat(branchesWithPreviousCommit).contains("refs/heads/master")
         }

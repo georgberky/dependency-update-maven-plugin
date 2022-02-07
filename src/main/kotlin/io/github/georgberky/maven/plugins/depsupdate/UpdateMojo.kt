@@ -61,6 +61,7 @@ class UpdateMojo : AbstractMojo() {
                     "Bump ${update.artifactId} from ${update.version} to ${update.latestVersion}"
                 )
                 git.push(branchName)
+                git.checkoutInitialBranch()
             }
         }
     }

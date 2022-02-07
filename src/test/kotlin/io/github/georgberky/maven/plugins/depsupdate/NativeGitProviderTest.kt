@@ -101,6 +101,22 @@ class NativeGitProviderTest {
         assertThat(branchList).contains("refs/heads/newBranch")
     }
 
+    @Test
+    internal fun `checkout initial branch`(){
+        val initialBranch = localGitRepo.repository.branch
+        val fileToCommit = File(localGitDirectory, "fileToCommit")
+        fileToCommit.createNewFile()
+        localGitRepo.branchCreate().setName("newBranch").call()
+        localGitRepo.checkout().setName("newBranch").call()
+        localGitRepo.add().addFilepattern(fileToCommit.name).call()
+        localGitRepo.commit().setAuthor("Georg", "georg@email.com").setMessage("init").call()
+
+        providerUnderTest.checkoutInitialBranch()
+
+        assertThat(localGitRepo.repository.branch).isEqualTo(initialBranch)
+
+    }
+
     private fun setupLocalGitRepoAsCloneOf(remoteGitDirectory: URI) {
         localGitDirectory = File(tempDir, "localGitRepoDir")
         localGitRepo = Git.cloneRepository()

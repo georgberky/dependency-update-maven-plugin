@@ -80,6 +80,10 @@ class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connec
                 .call()
     }
 
+    override fun checkoutInitialBranch() {
+        TODO("Not yet implemented")
+    }
+
     override fun close() {
         git.close()
     }

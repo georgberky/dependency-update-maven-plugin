@@ -8,11 +8,13 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
 
     private val gitCommand: String by lazy {
         val process = ProcessBuilder("which", "git")
-                .start()
+            .start()
 
         process.waitFor()
         IOUtils.toString(process.inputStream, StandardCharsets.UTF_8).trim()
     }
+
+    private val initialBranch: String = runInProcessWithOutput(gitCommand, "rev-parse", "--abbrev-ref",  "HEAD").second.trim()
 
     override fun hasRemoteBranch(remoteBranchName: String): Boolean {
         val processResult = runInProcessWithOutput(gitCommand, "branch", "--all")
@@ -34,6 +36,10 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
 
     override fun push(localBranchName: String) {
         runInProcess(gitCommand, "push", "--set-upstream", "origin", localBranchName)
+    }
+
+    override fun checkoutInitialBranch() {
+        runInProcess(gitCommand, "checkout", initialBranch)
     }
 
     override fun close() {

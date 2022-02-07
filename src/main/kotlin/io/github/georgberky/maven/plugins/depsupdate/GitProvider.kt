@@ -8,4 +8,5 @@ interface GitProvider : AutoCloseable {
     fun add(filePattern: String)
     fun commit(author: String, message: String)
     fun push(localBranchName: String)
+    fun checkoutInitialBranch()
 }
