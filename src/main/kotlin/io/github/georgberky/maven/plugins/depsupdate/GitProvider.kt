@@ -6,7 +6,7 @@ interface GitProvider : AutoCloseable {
 
     fun checkoutNewBranch(branchName: String)
     fun add(filePattern: String)
-    fun commit(author: String, message: String)
+    fun commit(author: String, email: String, message: String)
     fun push(localBranchName: String)
     fun checkoutInitialBranch()
 }
