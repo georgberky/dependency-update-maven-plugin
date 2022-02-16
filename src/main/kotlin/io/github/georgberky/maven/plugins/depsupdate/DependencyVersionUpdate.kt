@@ -12,8 +12,8 @@ class DependencyVersionUpdate(
 ) : VersionUpdate(groupId, artifactId, version, latestVersion) {
 
     override fun updatedPom() : Document {
-        pom.selectFirst("project > dependencies > dependency:has(> groupId:containsOwn(${groupId})):has(> artifactId:containsOwn(${artifactId})):has(> version:containsOwn(${version})) > version")
-                .text(latestVersion)
+        pom.selectFirst("project > dependencies > dependency:has(> groupId:containsOwn(${groupId})):has(> artifactId:containsOwn(${artifactId})):has(> version:containsOwn(${version})) > version")!!
+            .text(latestVersion)
         return pom
     }
 }
