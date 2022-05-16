@@ -16,5 +16,4 @@ abstract class VersionUpdate(
         println("latestVersion.equals(version) = ${latestVersion.equals(version)}")
         return latestVersion != "null" && latestVersion != version
     }
-
 }
