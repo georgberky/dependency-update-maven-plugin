@@ -45,7 +45,7 @@ class UpdateMojo : AbstractMojo() {
             )
             .updates
             .onEach { println("execute im mojo: latestVersion: '${it.latestVersion}' / version:'${it.version}'") }
-            .filter(VersionUpdate::canSkip)
+            .filterNot (VersionUpdate::isAlreadyLatestVersion)
             .onEach { println("execute im mojo canSkip: ${it.latestVersion}") }
             .map { it to "dependency-update/${it.groupId}-${it.artifactId}-${it.latestVersion}" }
             .onEach { println("execute im mojo canSkip (nach map): ${it.second} ${it.first}") }
