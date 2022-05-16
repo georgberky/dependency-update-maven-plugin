@@ -44,13 +44,13 @@ class UpdateMojo : AbstractMojo() {
                     artifactFactory = artifactFactory
             )
             .updates
-            .onEach { println("execute im mojo: latestVersion: '${it.latestVersion}' / version:'${it.version}'") }
+            .onEach { log.debug("execute in mojo: latestVersion: '${it.latestVersion}' / version:'${it.version}'") }
             .filterNot (VersionUpdate::isAlreadyLatestVersion)
-            .onEach { println("execute im mojo canSkip: ${it.latestVersion}") }
+            .onEach { log.debug("execute in mojo after latest version check: ${it.latestVersion}") }
             .map { it to "dependency-update/${it.groupId}-${it.artifactId}-${it.latestVersion}" }
-            .onEach { println("execute im mojo canSkip (nach map): ${it.second} ${it.first}") }
+            .onEach { log.debug("execute in mojo canSkip (after map): ${it.second} ${it.first}") }
             .filter { (_, branchName) -> !git.hasRemoteBranch(branchName) }
-            .onEach { println("execute im mojo nach filter branches: ${it.second} ${it.first}") }
+            .onEach { log.debug("execute in mojo after filter branches: ${it.second} ${it.first}") }
             .forEach { (update, branchName) ->
                 git.checkoutNewBranch(branchName)
                 val pom = update.updatedPom()
