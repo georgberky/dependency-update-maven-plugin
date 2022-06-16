@@ -77,7 +77,7 @@ class UpdateMojo : AbstractMojo() {
         fun prefix(): String {
             return "dependency-update/${groupId}-${artifactId}"
         }
-        
+
         override fun toString(): String {
             return "dependency-update/${groupId}-${artifactId}-${version}"
         }
