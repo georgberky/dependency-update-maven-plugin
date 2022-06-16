@@ -51,6 +51,8 @@ class UpdateMojo : AbstractMojo() {
                 .onEach { log.debug("execute in mojo canSkip (after map): ${it.second} ${it.first}") }
                 .filterNot { (_, branchName) -> git.hasRemoteBranch(branchName.toString()) }
 
+            // TODO next: extract updates with branch of other version, then log them
+
             updatesWithoutBranchForVersion
             .onEach { log.debug("execute in mojo after filter branches: ${it.second} ${it.first}") }
             .forEach { (update, branchName) ->
@@ -79,7 +81,7 @@ class UpdateMojo : AbstractMojo() {
         }
 
         override fun toString(): String {
-            return "dependency-update/${groupId}-${artifactId}-${version}"
+            return "${prefix()}-${version}"
         }
     }
 }
