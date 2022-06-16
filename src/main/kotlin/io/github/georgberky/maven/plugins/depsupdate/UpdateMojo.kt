@@ -37,22 +37,24 @@ class UpdateMojo : AbstractMojo() {
 
     override fun execute() {
         withGit { git ->
-            UpdateResolver(
-                    mavenProject = mavenProject,
-                    artifactMetadataSource = artifactMetadataSource,
-                    localRepository = localRepository,
-                    artifactFactory = artifactFactory
+            val updatesWithoutBranchForVersion = UpdateResolver(
+                mavenProject = mavenProject,
+                artifactMetadataSource = artifactMetadataSource,
+                localRepository = localRepository,
+                artifactFactory = artifactFactory
             )
-            .updates
-            .onEach { log.debug("execute in mojo: latestVersion: '${it.latestVersion}' / version:'${it.version}'") }
-            .filterNot (VersionUpdate::isAlreadyLatestVersion)
-            .onEach { log.debug("execute in mojo after latest version check: ${it.latestVersion}") }
-            .map { it to "dependency-update/${it.groupId}-${it.artifactId}-${it.latestVersion}" }
-            .onEach { log.debug("execute in mojo canSkip (after map): ${it.second} ${it.first}") }
-            .filter { (_, branchName) -> !git.hasRemoteBranch(branchName) }
+                .updates
+                .onEach { log.debug("execute in mojo: latestVersion: '${it.latestVersion}' / version:'${it.version}'") }
+                .filterNot(VersionUpdate::isAlreadyLatestVersion)
+                .onEach { log.debug("execute in mojo after latest version check: ${it.latestVersion}") }
+                .map { it to UpdateBranchName(it.groupId, it.artifactId, it.latestVersion) }
+                .onEach { log.debug("execute in mojo canSkip (after map): ${it.second} ${it.first}") }
+                .filterNot { (_, branchName) -> git.hasRemoteBranch(branchName.toString()) }
+
+            updatesWithoutBranchForVersion
             .onEach { log.debug("execute in mojo after filter branches: ${it.second} ${it.first}") }
             .forEach { (update, branchName) ->
-                git.checkoutNewBranch(branchName)
+                git.checkoutNewBranch(branchName.toString())
                 val pom = update.updatedPom()
                 mavenProject.file.writeText(pom.html())
                 git.add("pom.xml")
@@ -60,7 +62,7 @@ class UpdateMojo : AbstractMojo() {
                     "dependency-update-bot","",
                     "Bump ${update.artifactId} from ${update.version} to ${update.latestVersion}"
                 )
-                git.push(branchName)
+                git.push(branchName.toString())
                 git.checkoutInitialBranch()
             }
         }
@@ -69,5 +71,15 @@ class UpdateMojo : AbstractMojo() {
     private fun withGit(f: (GitProvider) -> Unit) {
         val git = gitProvider.createProvider(mavenProject.basedir.toPath(), settings, connection);
         git.use(f)
+    }
+
+    data class UpdateBranchName(val groupId: String, val artifactId: String, val version: String) {
+        fun prefix(): String {
+            return "dependency-update/${groupId}-${artifactId}"
+        }
+        
+        override fun toString(): String {
+            return "dependency-update/${groupId}-${artifactId}-${version}"
+        }
     }
 }
