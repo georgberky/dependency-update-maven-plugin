@@ -7,7 +7,6 @@ image:
 
 tasks:
   - name: Download all build dependencies
-  - init: mvn clean
-  - command: mvn dependency:go-offline
+  - init: mvn dependency:go-offline
 
 
