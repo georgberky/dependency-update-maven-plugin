@@ -6,12 +6,7 @@ image:
   file: .gitpod.Dockerfile
 
 tasks:
-<<<<<<< Updated upstream
-  - init: mvn verify -DskipTests
-    command: mvn verify
-=======
   - name: Download all build dependencies
   - init: mvn dependency:go-offline
->>>>>>> Stashed changes
 
 
