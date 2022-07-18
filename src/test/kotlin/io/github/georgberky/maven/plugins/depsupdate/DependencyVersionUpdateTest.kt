@@ -20,4 +20,18 @@ internal class DependencyVersionUpdateTest {
         assertThat(extractFromPom(updatedPom, "project.dependencies.dependency.find{ it.artifactId == 'assertj-core' }.version")).isEqualTo("3.15.0")
 
     }
+
+    @Test
+    fun skipStringNullVersions() {
+        // given
+        val pom = readPom("src/test/resources/poms/dependenciesPom.xml")
+        val depUpdate = DependencyVersionUpdate("org.junit.jupiter", "junit-jupiter", "5.5.2", "null", pom)
+
+        // when
+        val canSkip = depUpdate.canSkip()
+
+        // then
+        assertThat(canSkip)
+            .isFalse
+    }
 }

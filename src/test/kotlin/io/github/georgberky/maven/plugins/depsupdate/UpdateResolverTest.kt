@@ -85,6 +85,22 @@ internal class UpdateResolverTest {
                         tuple("org.assertj", "assertj-core", "3.15.0", "6.0.0"))
     }
 
+    @Test
+    fun nullDependencyUpdates() {
+        // given
+        val project = projectWithDependencies()
+        val updateResolverUnderTest = UpdateResolver(project, metadataSourceMock, localRepositoryMock, artifactFactoryMock)
+        every { artifactFactoryMock.createDependencyArtifact(junitDependency) } returns null
+        every { artifactFactoryMock.createDependencyArtifact(assertJDependency) } returns assertJArtifact
+
+        // when
+        val dependencyManagementUpdates = updateResolverUnderTest.dependencyManagementUpdates
+
+        // then
+        assertThat(dependencyManagementUpdates)
+            .hasSize(0)
+    }
+
     private fun projectWithParent(): MavenProject {
         val project = MavenProject()
         project.parentArtifact = artifact("io.github.georgberky.maven.plugins.depsupdate", "dependency-update-parent", "0.6.0")
