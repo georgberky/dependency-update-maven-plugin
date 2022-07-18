@@ -18,8 +18,8 @@ internal class NativeGitProviderErrorHandlingTest {
     @BeforeEach
     internal fun setUp() {
         gitProvider = object : NativeGitProvider(tempDir.toPath()) {
-            override fun run(vararg command: String): Pair<Int, String> {
-                return Pair(returnValue, processOutput)
+            override fun run(vararg command: String): Triple<Int, String, String> {
+                return Triple(returnValue, processOutput, "")
             }
         }
     }
