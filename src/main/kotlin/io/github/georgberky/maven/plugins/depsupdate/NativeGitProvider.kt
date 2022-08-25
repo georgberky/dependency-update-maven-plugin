@@ -57,21 +57,25 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
         if(returnValue != 0) {
             throw ProcessException("Native git invocation failed. " +
                     "Command: ${command.joinToString(" ")}, " +
-                    "return value was: $returnValue")
+                    "return value was: $returnValue\n" +
+                    "stdout was: ${result.second}\n" +
+                    "stderr was: ${result.third}")
         }
 
-        return result
+        return Pair(returnValue, result.second)
     }
 
-    open fun run(vararg command: String): Pair<Int, String> {
+    open fun run(vararg command: String): Triple<Int, String, String> {
 
         val process = ProcessBuilder(*command)
                 .directory(localRepositoryDirectory.toFile())
                 .start()
 
         val returnValue = process.waitFor()
-        val processOutput = IOUtils.toString(process.inputStream)
-        return Pair(returnValue, processOutput)
+        val processOutput = IOUtils.toString(process.inputStream, StandardCharsets.UTF_8)
+        val processErr = IOUtils.toString(process.errorStream, StandardCharsets.UTF_8)
+
+        return Triple(returnValue, processOutput, processErr)
     }
 
     class ProcessException(message: String?) : RuntimeException(message) {
