@@ -32,7 +32,7 @@ class UpdateResolver(
     val dependencyManagementUpdates
         get() = (mavenProject.originalModel.dependencyManagement?.dependencies ?: listOf())
             .filter(Dependency::isConcrete)
-            .map(artifactFactory::createDependencyArtifact)
+            .mapNotNull(artifactFactory::createDependencyArtifact)
             .map { artifact -> DependencyManagementVersionUpdate(
                     artifact.groupId,
                     artifact.artifactId,
@@ -44,7 +44,7 @@ class UpdateResolver(
         get() = mavenProject.originalModel.dependencies
             .filter(Dependency::isConcrete)
             .onEach { println("dependencyUpdates: $it") }
-            .map(artifactFactory::createDependencyArtifact)
+            .mapNotNull(artifactFactory::createDependencyArtifact)
             .map { a -> DependencyVersionUpdate(
                     a.groupId,
                     a.artifactId,
@@ -52,6 +52,11 @@ class UpdateResolver(
                     retrieveLatestVersion(a),
                     pomXml())}
 
+    /**
+     * Returns the latest version or (if not resolvable) the String {@code "null"}.
+     *
+     * @return the latest version as String or the String {@code "null"} if no latest version was found.
+     */
     private fun retrieveLatestVersion(artifact: Artifact) =
         artifactMetadataSource
             .retrieveAvailableVersions(artifact, localRepository, mavenProject.remoteArtifactRepositories)
