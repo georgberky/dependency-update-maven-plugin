@@ -34,6 +34,10 @@
             <name>Georg Berky</name>
             <email>hallo@berky.dev</email>
         </developer>
+        <developer>
+            <name>Benjamin Marwell</name>
+            <email>bmarwell@apache.org</email>
+        </developer>
     </developers>
 
     <scm>
@@ -52,10 +56,16 @@
             <id>ossrh</id>
             <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
+        <site>
+            <id>gh_pages</id>
+            <name>Maven Site on GitHub Pages</name>
+            <url>https://pages.github.com/georgberky/dependency-update-maven-plugin/</url>
+        </site>
     </distributionManagement>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.version>3.6.3</maven.version>
         <kotlin.version>1.6.0</kotlin.version>
         <maven-plugin.version>3.6.0</maven-plugin.version>
@@ -255,6 +265,21 @@
                     <artifactId>maven-install-plugin</artifactId>
                     <version>2.5.2</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-site-plugin</artifactId>
+                    <version>3.12.0</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-project-info-reports-plugin</artifactId>
+                    <version>3.3.0</version>
+                    <configuration>
+                        <pluginManagementExcludes>
+                            <exclude>org.eclipse.m2e:lifecycle-mapping</exclude>
+                        </pluginManagementExcludes>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -384,6 +409,40 @@
             </plugin>
         </plugins>
     </build>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>index</report>
+                            <report>summary</report>
+                            <report>dependency-info</report>
+                            <report>modules</report>
+                            <report>team</report>
+                            <report>scm</report>
+                            <report>issue-management</report>
+                            <report>mailing-lists</report>
+                            <report>dependency-management</report>
+                            <report>dependencies</report>
+                            <report>dependency-convergence</report>
+                            <report>ci-management</report>
+                            <report>plugin-management</report>
+                            <report>plugins</report>
+                            <report>distribution-management</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-plugin-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </reporting>
 
     <profiles>
         <profile>
