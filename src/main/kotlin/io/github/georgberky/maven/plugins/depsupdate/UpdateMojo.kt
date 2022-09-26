@@ -3,6 +3,7 @@ package io.github.georgberky.maven.plugins.depsupdate
 import org.apache.maven.artifact.factory.ArtifactFactory
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource
 import org.apache.maven.artifact.repository.ArtifactRepository
+import org.apache.maven.execution.MavenSession
 import org.apache.maven.plugin.AbstractMojo
 import org.apache.maven.plugins.annotations.Component
 import org.apache.maven.plugins.annotations.Mojo
@@ -10,8 +11,11 @@ import org.apache.maven.plugins.annotations.Parameter
 import org.apache.maven.project.MavenProject
 import org.apache.maven.settings.Settings
 
+
 @Mojo(name = "update")
 class UpdateMojo : AbstractMojo() {
+    @Parameter(defaultValue = "\${session}", readonly = true, required = true)
+    lateinit var mavenSession: MavenSession
     @Parameter(defaultValue = "\${project}", required = true)
     lateinit var mavenProject: MavenProject
     @Parameter(defaultValue = "\${localRepository}", required = true)
@@ -41,7 +45,8 @@ class UpdateMojo : AbstractMojo() {
                     mavenProject = mavenProject,
                     artifactMetadataSource = artifactMetadataSource,
                     localRepository = localRepository,
-                    artifactFactory = artifactFactory
+                    artifactFactory = artifactFactory,
+                    mavenSession = mavenSession
             )
             .updates
             .onEach { println("execute im mojo: latestVersion: '${it.latestVersion}' / version:'${it.version}'") }
