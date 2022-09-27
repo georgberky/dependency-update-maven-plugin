@@ -14,7 +14,7 @@ steps:
     commands:
       - apt update
       - apt install git -y
-      - mvn -V clean verify --fail-at-end --batch-mode
+      - mvn -V verify site site:stage --fail-at-end --batch-mode -Pdocs
   - name: coverage
     image: plugins/codecov
     settings:

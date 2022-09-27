@@ -31,11 +31,13 @@ function catch_sig() {
 
 deploy_site() {
     local upstream_url="${1}"
+    local commit="${2}"
     local root_dir="$PWD"
 
     mkdir -p "$PWD/target"
     cd "$PWD/target"
     git clone --depth=1 --branch "gh_site" "${upstream_url}" "gh_site" || true
+
     if [ ! -d "gh_site" ]; then
         echo "[INFO] Initial creation of new orphan branch gh_site."
         git clone --depth=1 "${upstream_url}" "gh_site"
@@ -46,6 +48,9 @@ deploy_site() {
 
     rm -rf "${PWD}/."
     rsync -a "$root_dir/target/staging/." .
+    git add .
+    git commit -m "[SITE] update site commit [$commit]"
+    git push origin gh_site
     cd "${root_dir}"
 }
 
@@ -62,8 +67,8 @@ mvn versions:set "-DnewVersion=$release_version" -DgenerateBackupPoms=false
 git commit -a -m "$release_version release"
 git tag -a "$release_version" -a -m "$release_version release"
 
-mvn clean site site:stage deploy -DskipTests -Prelease
-deploy_site "$(git remote get-url origin)"
+mvn clean site site:stage deploy -DskipTests -Prelease,docs
+deploy_site "$(git remote get-url origin)" "$(git rev-parse HEAD)"
 
 mvn versions:set "-DnewVersion=$new_version" -DgenerateBackupPoms=false
 git commit -a -m "Preparing $new_version iteration"

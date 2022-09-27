@@ -20,3 +20,9 @@ If a more recent version of a dependency is found, the plugin will
 ```sh
 mvn io.github.georgberky.maven.plugins.depsupdate:dependency-update-maven-plugin:update
 ```
+
+## Goals
+
+### update
+
+[Update Mojo](https://pages.github.com/georgberky/dependency-update-maven-plugin/)
