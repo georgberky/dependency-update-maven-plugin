@@ -10,7 +10,7 @@ platform:
 steps:
   - name: mavenjdk8
     pull: always
-    image: docker.io/maven:3.6.3-jdk-8-slim
+    image: docker.io/maven:3.8.6-eclipse-temurin-8
     commands:
       - apt update
       - apt install git -y
