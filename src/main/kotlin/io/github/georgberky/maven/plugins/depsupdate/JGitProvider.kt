@@ -11,7 +11,6 @@ import org.eclipse.jgit.transport.*
 import org.eclipse.jgit.util.FS
 import java.nio.file.Path
 
-// TODO: interaction test
 class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connection: String) : GitProvider {
     val git : Git = Git(
             RepositoryBuilder()
@@ -20,8 +19,10 @@ class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connec
                     .setMustExist(true)
                     .build())
 
+    private val initialBranch: String = git.repository.branch
+
     override fun hasRemoteBranch(remoteBranchName: String) =
-            git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call().none { it.name == "refs/remotes/origin/$remoteBranchName" }
+            git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call().any { it.name == "refs/remotes/origin/$remoteBranchName" }
 
     override fun checkoutNewBranch(newBranchName: String) {
         git
@@ -39,9 +40,9 @@ class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connec
                 .call()
     }
 
-    override fun commit(author: String, message: String) {
+    override fun commit(author: String, email: String, message: String) {
         git.commit()
-                .setAuthor(PersonIdent(author, ""))
+                .setAuthor(PersonIdent(author, email))
                 .setMessage(message)
                 .call()
     }
@@ -78,6 +79,14 @@ class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connec
                 }
                 .setPushOptions(listOf("merge_request.create"))
                 .call()
+    }
+
+    override fun checkoutInitialBranch() {
+        git
+            .checkout()
+            .setStartPoint(git.repository.fullBranch)
+            .setName(initialBranch)
+            .call()
     }
 
     override fun close() {

@@ -1,14 +1,16 @@
 package io.github.georgberky.maven.plugins.depsupdate
 
-import org.assertj.core.api.Assertions
+import org.apache.maven.settings.Settings
+import org.assertj.core.api.Assumptions.assumeThatCode
+import org.eclipse.jgit.api.errors.TransportException
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.nio.file.Path
-import java.util.stream.Collectors
 
-
-class NativeGitProviderTest : GitProviderTest() {
-    override fun setupGitProvider(localGitDirectoryPath: Path): GitProvider = NativeGitProvider(localGitDirectoryPath)
+class JGitProviderTest : GitProviderTest() {
+    override fun setupGitProvider(localGitDirectoryPath: Path): GitProvider {
+        return JGitProvider(localGitDirectoryPath, Settings(), "scm:git:"+remoteGitDirectory.toURI().toString())
+    }
 
     @Test // TODO need a solution for testing push with JGitProvider
     internal fun `push change to remote repository`() {
@@ -19,12 +21,8 @@ class NativeGitProviderTest : GitProviderTest() {
         localGitRepo.add().addFilepattern(fileToCommit.name).call()
         localGitRepo.commit().setAuthor("Georg", "georg@email.com").setMessage("init").call()
 
-        providerUnderTest.push("newBranch")
+        val lambda = { providerUnderTest.push("newBranch") }
 
-        val branchList = remoteGitRepo.branchList().call().stream()
-            .map { it.name }
-            .collect(Collectors.toList())
-        Assertions.assertThat(branchList).contains("refs/heads/newBranch")
+        assumeThatCode(lambda).isInstanceOf(TransportException::class.java)
     }
-
 }

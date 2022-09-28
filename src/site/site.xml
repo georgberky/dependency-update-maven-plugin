@@ -1,0 +1,25 @@
+<project xmlns="http://maven.apache.org/DECORATION/1.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.0 http://maven.apache.org/xsd/decoration-1.0.0.xsd">
+  <body>
+    <menu name="Overview">
+      <item name="Introduction" href="index.html"/>
+      <item name="Goals" href="plugin-info.html"/>
+      <item name="Summary" href="summary.html"/>
+      <item name="Licenses" href="licenses.html"/>
+      <item name="Project Info" href="project-info.html"/>
+      <item name="Team" href="team.html"/>
+      <!-- not useful -->
+      <!--item name="Dependency Info" href="dependency-info.html"/-->
+    </menu>
+    <menu name="Developer Information">
+      <item name="Jacoco Coverage" href="jacoco/index.html"/>
+      <item name="Dependencies" href="dependencies.html"/>
+      <item name="Dependency Convergence" href="dependency-convergence.html"/>
+      <item name="Plugin Management" href="plugin-management.html"/>
+      <item name="Plugins" href="plugins.html"/>
+      <item name="Project Reports" href="project-reports.html"/>
+      <item name="SCM" href="scm.html"/>
+    </menu>
+  </body>
+</project>

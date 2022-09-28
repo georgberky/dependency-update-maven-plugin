@@ -5,5 +5,5 @@ import org.apache.maven.artifact.factory.ArtifactFactory
 import org.apache.maven.artifact.versioning.VersionRange.createFromVersionSpec
 import org.apache.maven.model.Dependency
 
-fun ArtifactFactory.createDependencyArtifact(dependency: Dependency): Artifact =
+fun ArtifactFactory.createDependencyArtifact(dependency: Dependency): Artifact? =
     createDependencyArtifact(dependency.groupId, dependency.artifactId, createFromVersionSpec(dependency.version), dependency.type, dependency.classifier, dependency.scope, dependency.optional)

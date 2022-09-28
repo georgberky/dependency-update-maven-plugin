@@ -12,7 +12,7 @@ class ParentVersionUpdate(
 ) : VersionUpdate(groupId, artifactId, version, latestVersion) {
 
     override fun updatedPom() : Document {
-        pom.selectFirst("project > parent > version").text(latestVersion)
+        pom.selectFirst("project > parent > version")!!.text(latestVersion)
         return pom
     }
 }
