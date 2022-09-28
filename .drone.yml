@@ -12,6 +12,7 @@ steps:
     pull: always
     image: docker.io/maven:3.8.6-eclipse-temurin-8
     commands:
+      - echo $JAVA_HOME
       - mvn -V clean verify --fail-at-end --batch-mode
   - name: coverage
     image: plugins/codecov
