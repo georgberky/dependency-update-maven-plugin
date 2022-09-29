@@ -9,12 +9,20 @@ platform:
 
 steps:
   - name: mavenjdk8
-    pull: always
-    image: docker.io/maven:3.6.3-jdk-8-slim
+    pull: if-not-exists
+    image: adoptopenjdk/openjdk8-openj9:ubi
     commands:
-      - apt update
-      - apt install git -y
-      - mvn -V verify site site:stage --fail-at-end --batch-mode -Pdocs
+      - dnf install --quiet --assumeyes ca-certificates git openssl
+      - java -version
+      - |
+        ./mvnw \
+        --show-version \
+        --no-transfer-progress \
+        --errors \
+        --fail-at-end \
+        --batch-mode \
+        verify site site:stage \
+        -Pdocs
   - name: coverage
     image: plugins/codecov
     settings:
