@@ -9,12 +9,20 @@ platform:
 
 steps:
   - name: mavenjdk8
-    pull: always
-    image: docker.io/maven:3.6.3-jdk-8-slim
+    pull: if-not-exists
+    image: docker.io/maven:3.8.6-eclipse-temurin-8-focal
     commands:
-      - apt update
-      - apt install git -y
-      - mvn -V verify site site:stage --fail-at-end --batch-mode -Pdocs
+      - git config --global user.email "noreply@dependency-plugin.invalid"
+      - git config --global user.name "dependency-update-maven-plugin"
+      - |
+        mvn \
+          --show-version \
+          --fail-at-end \
+          --batch-mode \
+          --no-transfer-progress \
+          verify \
+          site site:stage \
+          -Pdocs
   - name: coverage
     image: plugins/codecov
     settings:
