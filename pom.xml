@@ -164,8 +164,8 @@
         </dependency>
         <dependency>
             <groupId>io.mockk</groupId>
-            <artifactId>mockk</artifactId>
-            <version>1.9.3</version>
+            <artifactId>mockk-jvm</artifactId>
+            <version>1.12.8</version>
             <scope>test</scope>
         </dependency>
         <dependency>
