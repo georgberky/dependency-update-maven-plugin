@@ -28,7 +28,7 @@ internal class DependencyVersionUpdateTest {
         val depUpdate = DependencyVersionUpdate("org.junit.jupiter", "junit-jupiter", "5.5.2", "null", pom)
 
         // when
-        val canSkip = depUpdate.canSkip()
+        val canSkip = depUpdate.isAlreadyLatestVersion()
 
         // then
         assertThat(canSkip)

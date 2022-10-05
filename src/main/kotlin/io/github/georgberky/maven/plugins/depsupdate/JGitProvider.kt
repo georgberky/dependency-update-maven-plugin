@@ -2,6 +2,7 @@ package io.github.georgberky.maven.plugins.depsupdate
 
 import com.jcraft.jsch.Session
 import org.apache.maven.settings.Settings
+import org.bouncycastle.cms.RecipientId.password
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand
 import org.eclipse.jgit.api.TransportConfigCallback
@@ -12,73 +13,80 @@ import org.eclipse.jgit.util.FS
 import java.nio.file.Path
 
 class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connection: String) : GitProvider {
-    val git : Git = Git(
-            RepositoryBuilder()
-                    .readEnvironment()
-                    .findGitDir(localRepositoryPath.toFile())
-                    .setMustExist(true)
-                    .build())
+    val git: Git = Git(
+        RepositoryBuilder()
+            .readEnvironment()
+            .findGitDir(localRepositoryPath.toFile())
+            .setMustExist(true)
+            .build()
+    )
 
     private val initialBranch: String = git.repository.branch
 
-    override fun hasRemoteBranch(remoteBranchName: String) =
-            git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call().any { it.name == "refs/remotes/origin/$remoteBranchName" }
+    override fun hasRemoteBranch(remoteBranchName: String): Boolean {
+        return git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call()
+            .any { it.name == "refs/remotes/origin/$remoteBranchName" }
+    }
+
+    override fun hasRemoteBranchWithPrefix(remoteBranchNamePrefix: String): Boolean {
+        return git.branchList().setListMode(ListBranchCommand.ListMode.ALL).call()
+            .any { it.name.startsWith("refs/remotes/origin/$remoteBranchNamePrefix") }
+    }
 
     override fun checkoutNewBranch(newBranchName: String) {
-        git
-                .checkout()
-                .setStartPoint(git.repository.fullBranch)
-                .setCreateBranch(true)
-                .setName(newBranchName)
-                .call()
+        git.checkout()
+            .setStartPoint(git.repository.fullBranch)
+            .setCreateBranch(true)
+            .setName(newBranchName)
+            .call()
 
     }
 
     override fun add(filePattern: String) {
         git.add()
-                .addFilepattern(filePattern)
-                .call()
+            .addFilepattern(filePattern)
+            .call()
     }
 
     override fun commit(author: String, email: String, message: String) {
         git.commit()
-                .setAuthor(PersonIdent(author, email))
-                .setMessage(message)
-                .call()
+            .setAuthor(PersonIdent(author, email))
+            .setMessage(message)
+            .call()
     }
 
     override fun push(branchName: String) {
-        git
-                .push()
-                .setRefSpecs(RefSpec("$branchName:$branchName"))
-                .apply {
-                    val uri = URIish(connection.removePrefix("scm:git:"))
+        git.push()
+            .setRefSpecs(RefSpec("$branchName:$branchName"))
+            .apply {
+                val uri = URIish(connection.removePrefix("scm:git:"))
 
-                    when (uri.scheme) {
-                        "https" -> {
-                            val (username, password) = usernamePassword(uri)
+                when (uri.scheme) {
+                    "https" -> {
+                        val (username, password) = usernamePassword(uri)
 
-                            setCredentialsProvider(UsernamePasswordCredentialsProvider(username, password))
-                        }
-                        else -> {
-                            setTransportConfigCallback(TransportConfigCallback { transport ->
-                                if (transport !is SshTransport) return@TransportConfigCallback
+                        setCredentialsProvider(UsernamePasswordCredentialsProvider(username, password))
+                    }
 
-                                transport.sshSessionFactory = object : JschConfigSessionFactory() {
-                                    override fun configure(hc: OpenSshConfig.Host?, session: Session?) {
-                                    }
+                    else -> {
+                        setTransportConfigCallback(TransportConfigCallback { transport ->
+                            if (transport !is SshTransport) return@TransportConfigCallback
 
-                                    override fun createDefaultJSch(fs: FS?) =
-                                            settings.getServer(uri.host).run {
-                                                super.createDefaultJSch(fs).apply { addIdentity(privateKey, passphrase) }
-                                            }
+                            transport.sshSessionFactory = object : JschConfigSessionFactory() {
+                                override fun configure(hc: OpenSshConfig.Host?, session: Session?) {
                                 }
-                            })
-                        }
+
+                                override fun createDefaultJSch(fs: FS?) =
+                                    settings.getServer(uri.host).run {
+                                        super.createDefaultJSch(fs).apply { addIdentity(privateKey, passphrase) }
+                                    }
+                            }
+                        })
                     }
                 }
-                .setPushOptions(listOf("merge_request.create"))
-                .call()
+            }
+            .setPushOptions(listOf("merge_request.create"))
+            .call()
     }
 
     override fun checkoutInitialBranch() {
@@ -94,5 +102,5 @@ class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connec
     }
 
     private fun usernamePassword(uri: URIish) =
-            if (uri.user != null) uri.user to uri.pass else settings.getServer(uri.host).run { username to password }
+        if (uri.user != null) uri.user to uri.pass else settings.getServer(uri.host).run { username to password }
 }
