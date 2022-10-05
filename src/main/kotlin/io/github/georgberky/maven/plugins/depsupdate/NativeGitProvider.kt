@@ -22,6 +22,14 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
         return processOutput.contains("remotes/origin/" + remoteBranchName)
     }
 
+    override fun hasRemoteBranchWithPrefix(remoteBranchNamePrefix: String): Boolean {
+        val processResult = runInProcessWithOutput(gitCommand, "branch", "--all")
+        val processOutput = processResult.second
+        return processOutput.lines()
+            .map { it.trim() }
+            .any { it.startsWith("remotes/origin/" + remoteBranchNamePrefix) }
+    }
+
     override fun checkoutNewBranch(newBranchName: String) {
         runInProcess(gitCommand, "checkout", "-b", newBranchName)
     }
