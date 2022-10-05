@@ -96,7 +96,18 @@ abstract class GitProviderTest() {
         providerUnderTest.checkoutInitialBranch()
 
         assertThat(localGitRepo.repository.branch).isEqualTo(initialBranch)
+    }
 
+    @Test
+    fun `has remote branch with prefix`() {
+        remoteGitRepo.branchCreate().setName("branchName-suffix").call()
+        localGitRepo.fetch().call()
+
+        val hasRemoteBranchWithPrefix = providerUnderTest.hasRemoteBranchWithPrefix("branchName");
+
+        assertThat(hasRemoteBranchWithPrefix)
+            .describedAs("remote branch with prefix should exist")
+            .isTrue()
     }
 
     private fun setupLocalGitRepoAsCloneOf(remoteGitDirectory: URI) {
