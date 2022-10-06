@@ -3,6 +3,7 @@ package io.github.georgberky.maven.plugins.depsupdate
 import org.apache.maven.artifact.factory.ArtifactFactory
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource
 import org.apache.maven.artifact.repository.ArtifactRepository
+import org.apache.maven.execution.MavenSession
 import org.apache.maven.plugin.AbstractMojo
 import org.apache.maven.plugins.annotations.Component
 import org.apache.maven.plugins.annotations.Mojo
@@ -12,30 +13,25 @@ import org.apache.maven.settings.Settings
 
 @Mojo(name = "update")
 class UpdateMojo : AbstractMojo() {
+    @Parameter(defaultValue = "\${session}", readonly = true, required = true)
+    lateinit var mavenSession: MavenSession
     @Parameter(defaultValue = "\${project}", required = true)
     lateinit var mavenProject: MavenProject
-
     @Parameter(defaultValue = "\${localRepository}", required = true)
     lateinit var localRepository: ArtifactRepository
-
     @Parameter(defaultValue = "\${settings}", required = true)
     lateinit var settings: Settings
-
     @Parameter(property = "connectionUrl", defaultValue = "\${project.scm.connection}")
     lateinit var connectionUrl: String
-
     @Parameter(property = "developerConnectionUrl", defaultValue = "\${project.scm.developerConnection}")
     lateinit var developerConnectionUrl: String
-
     @Parameter(property = "connectionType", defaultValue = "connection", required = true)
     lateinit var connectionType: String
-
     @Parameter(property = "dependencyUpdate.git.provider", defaultValue = "NATIVE", required = false)
     lateinit var gitProvider: GitProviderChoice
 
     @Component
     lateinit var artifactFactory: ArtifactFactory
-
     @Component
     lateinit var artifactMetadataSource: ArtifactMetadataSource
 
@@ -48,7 +44,8 @@ class UpdateMojo : AbstractMojo() {
                 mavenProject = mavenProject,
                 artifactMetadataSource = artifactMetadataSource,
                 localRepository = localRepository,
-                artifactFactory = artifactFactory
+                artifactFactory = artifactFactory,
+                mavenSession = mavenSession
             )
                 .updates
                 .onEach { log.debug("execute in mojo: latestVersion: '${it.latestVersion}' / version:'${it.version}'") }
