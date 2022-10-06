@@ -37,7 +37,7 @@ class UpdateResolver(
     val dependencyManagementUpdates
         get() = (mavenProject.originalModel.dependencyManagement?.dependencies ?: listOf())
             .filter(Dependency::isConcrete)
-            .filter { !isReactorArtifact(it) }
+            .filterNot { isReactorArtifact(it) }
             .mapNotNull(artifactFactory::createDependencyArtifact)
             .map { artifact -> DependencyManagementVersionUpdate(
                     artifact.groupId,
@@ -49,7 +49,7 @@ class UpdateResolver(
     val dependencyUpdates
         get() = mavenProject.originalModel.dependencies
             .filter(Dependency::isConcrete)
-            .filter { !isReactorArtifact(it) }
+            .filterNot { isReactorArtifact(it) }
             .onEach { println("dependencyUpdates: $it") }
             .mapNotNull(artifactFactory::createDependencyArtifact)
             .map { a -> DependencyVersionUpdate(
