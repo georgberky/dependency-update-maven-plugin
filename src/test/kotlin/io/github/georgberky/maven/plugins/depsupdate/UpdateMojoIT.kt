@@ -1,6 +1,8 @@
 package io.github.georgberky.maven.plugins.depsupdate
 
-import com.soebes.itf.jupiter.extension.*
+import com.soebes.itf.jupiter.extension.MavenGoal
+import com.soebes.itf.jupiter.extension.MavenJupiterExtension
+import com.soebes.itf.jupiter.extension.MavenTest
 import com.soebes.itf.jupiter.maven.MavenExecutionResult
 import com.soebes.itf.jupiter.maven.MavenProjectResult
 import org.apache.commons.io.FileUtils
@@ -28,7 +30,7 @@ internal class UpdateMojoIT {
         FileUtils.copyDirectory(result.targetProjectDirectory, remoteRepo)
 
         repo = Git.init().setDirectory(remoteRepo).call()
-        repo.add().addFilepattern(".").call();
+        repo.add().addFilepattern(".").call()
         repo.commit()
             .setAuthor("Schorsch", "georg@email.com")
             .setMessage("Initial commit.")
@@ -47,7 +49,6 @@ internal class UpdateMojoIT {
     @MavenTest
     @MavenGoal("\${project.groupId}:\${project.artifactId}:\${project.version}:update")
     fun remoteBranchForPreviousVersionExists(result: MavenExecutionResult) {
-
         val branchList = repo.branchList()
             .setListMode(ListBranchCommand.ListMode.ALL)
             .call()
@@ -56,16 +57,16 @@ internal class UpdateMojoIT {
             .collect(toList())
 
         mavenAssertThat(result)
-                .describedAs("the build should have been successful")
-                .isSuccessful()
+            .describedAs("the build should have been successful")
+            .isSuccessful()
 
         mavenAssertThat(result).out().warn().contains("Dependency '${alreadyExistingRemoteBranch.prefix()}' already has a branch for a previous version update. Please merge it first")
 
         assertThat(branchList)
-                .describedAs("should create remote feature branches for two dependencies")
-                .filteredOn { it.startsWith("refs/remotes/") }
-                .filteredOn { !it.contains("origin/master") }
-                .hasSize(2)
+            .describedAs("should create remote feature branches for two dependencies")
+            .filteredOn { it.startsWith("refs/remotes/") }
+            .filteredOn { !it.contains("origin/master") }
+            .hasSize(2)
 
         assertThat(branchList)
             .describedAs("already existing update branch should not have been overwritten")

@@ -15,23 +15,31 @@ import org.apache.maven.settings.Settings
 class UpdateMojo : AbstractMojo() {
     @Parameter(defaultValue = "\${session}", readonly = true, required = true)
     lateinit var mavenSession: MavenSession
+
     @Parameter(defaultValue = "\${project}", required = true)
     lateinit var mavenProject: MavenProject
+
     @Parameter(defaultValue = "\${localRepository}", required = true)
     lateinit var localRepository: ArtifactRepository
+
     @Parameter(defaultValue = "\${settings}", required = true)
     lateinit var settings: Settings
+
     @Parameter(property = "connectionUrl", defaultValue = "\${project.scm.connection}")
     lateinit var connectionUrl: String
+
     @Parameter(property = "developerConnectionUrl", defaultValue = "\${project.scm.developerConnection}")
     lateinit var developerConnectionUrl: String
+
     @Parameter(property = "connectionType", defaultValue = "connection", required = true)
     lateinit var connectionType: String
+
     @Parameter(property = "dependencyUpdate.git.provider", defaultValue = "NATIVE", required = false)
     lateinit var gitProvider: GitProviderChoice
 
     @Component
     lateinit var artifactFactory: ArtifactFactory
+
     @Component
     lateinit var artifactMetadataSource: ArtifactMetadataSource
 
@@ -61,7 +69,7 @@ class UpdateMojo : AbstractMojo() {
                 .forEach { (_, branchName) ->
                     log.warn(
                         "Dependency '${branchName.prefix()}' already has a branch for a previous version update. " +
-                                "Please merge it first"
+                            "Please merge it first"
                     )
                 }
 
@@ -76,7 +84,8 @@ class UpdateMojo : AbstractMojo() {
                     mavenProject.file.writeText(pom.html())
                     git.add("pom.xml")
                     git.commit(
-                        "dependency-update-bot", "",
+                        "dependency-update-bot",
+                        "",
                         "Bump ${update.artifactId} from ${update.version} to ${update.latestVersion}"
                     )
                     git.push(branchName.toString())
@@ -86,17 +95,17 @@ class UpdateMojo : AbstractMojo() {
     }
 
     private fun withGit(f: (GitProvider) -> Unit) {
-        val git = gitProvider.createProvider(mavenProject.basedir.toPath(), settings, connection);
+        val git = gitProvider.createProvider(mavenProject.basedir.toPath(), settings, connection)
         git.use(f)
     }
 
     data class UpdateBranchName(val groupId: String, val artifactId: String, val version: String) {
         fun prefix(): String {
-            return "dependency-update/${groupId}-${artifactId}"
+            return "dependency-update/$groupId-$artifactId"
         }
 
         override fun toString(): String {
-            return "${prefix()}-${version}"
+            return "${prefix()}-$version"
         }
     }
 }

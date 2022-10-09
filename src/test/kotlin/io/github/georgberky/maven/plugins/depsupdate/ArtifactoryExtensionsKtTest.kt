@@ -4,12 +4,10 @@ import org.apache.maven.artifact.Artifact
 import org.apache.maven.artifact.factory.DefaultArtifactFactory
 import org.apache.maven.artifact.handler.ArtifactHandler
 import org.apache.maven.artifact.handler.DefaultArtifactHandler
-import org.apache.maven.artifact.versioning.VersionRange
-import org.assertj.core.api.Assertions.assertThat
-import org.junitpioneer.jupiter.cartesian.CartesianTest
 import org.apache.maven.artifact.handler.manager.ArtifactHandlerManager
 import org.apache.maven.model.Dependency
-import org.assertj.core.api.Assertions.`in`
+import org.assertj.core.api.Assertions.assertThat
+import org.junitpioneer.jupiter.cartesian.CartesianTest
 
 internal class ArtifactoryExtensionsKtTest {
 
@@ -24,7 +22,7 @@ internal class ArtifactoryExtensionsKtTest {
         @CartesianTest.Values(strings = [ "true", "false" ]) inheritedScope: String
     ) {
         // given
-        val artifactHandlerManager = object: ArtifactHandlerManager {
+        val artifactHandlerManager = object : ArtifactHandlerManager {
             override fun getArtifactHandler(type: String?): ArtifactHandler {
                 return DefaultArtifactHandler()
             }
@@ -49,9 +47,10 @@ internal class ArtifactoryExtensionsKtTest {
         val artifact: Artifact? = defaultArtifactFactory.createDependencyArtifact(dependency)
 
         // expect
-        if (scope == "provided" || scope == "test")
+        if (scope == "provided" || scope == "test") {
             assertThat(artifact).isNull()
-        else
+        } else {
             assertThat(artifact).isNotNull
+        }
     }
 }

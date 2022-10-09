@@ -33,13 +33,13 @@ internal class UpdateResolverTest {
     private val reactorModuleBArtifact = artifact("com.text", "moduleB", "1.0.0-SNAPSHOT")
 
     @MockK
-    lateinit var metadataSourceMock : ArtifactMetadataSource
+    lateinit var metadataSourceMock: ArtifactMetadataSource
 
     @MockK
-    lateinit var localRepositoryMock : ArtifactRepository
+    lateinit var localRepositoryMock: ArtifactRepository
 
     @MockK
-    lateinit var artifactFactoryMock : ArtifactFactory
+    lateinit var artifactFactoryMock: ArtifactFactory
 
     @MockK
     lateinit var mavenSession: MavenSession
@@ -52,7 +52,7 @@ internal class UpdateResolverTest {
     @Test
     fun parentUpdate() {
         val project = projectWithParent()
-        every { metadataSourceMock.retrieveAvailableVersions(project.parentArtifact, any(), any()) } returns listOf( DefaultArtifactVersion("1.0.0") )
+        every { metadataSourceMock.retrieveAvailableVersions(project.parentArtifact, any(), any()) } returns listOf(DefaultArtifactVersion("1.0.0"))
 
         val updateResolverUnderTest = UpdateResolver(
             project,
@@ -63,19 +63,22 @@ internal class UpdateResolverTest {
         )
 
         assertThat(updateResolverUnderTest.parentUpdates)
-                .hasSize(1)
-                .extracting("groupId", "artifactId", "version", "latestVersion")
-                .containsExactly(tuple(
-                        project.parentArtifact.groupId,
-                        project.parentArtifact.artifactId,
-                        project.parentArtifact.version,
-                        "1.0.0"))
+            .hasSize(1)
+            .extracting("groupId", "artifactId", "version", "latestVersion")
+            .containsExactly(
+                tuple(
+                    project.parentArtifact.groupId,
+                    project.parentArtifact.artifactId,
+                    project.parentArtifact.version,
+                    "1.0.0"
+                )
+            )
     }
 
     @Test
     fun dependencyUpdates() {
         val project = projectWithDependencies()
-        every { metadataSourceMock.retrieveAvailableVersions(any(), any(), any()) } returns listOf( DefaultArtifactVersion("6.0.0") )
+        every { metadataSourceMock.retrieveAvailableVersions(any(), any(), any()) } returns listOf(DefaultArtifactVersion("6.0.0"))
         every { artifactFactoryMock.createDependencyArtifact(junitDependency) } returns junitArtifact
         every { artifactFactoryMock.createDependencyArtifact(assertJDependency) } returns assertJArtifact
 
@@ -88,16 +91,18 @@ internal class UpdateResolverTest {
         )
 
         assertThat(updateResolverUnderTest.dependencyUpdates)
-                .hasSize(2)
-                .extracting("groupId", "artifactId", "version", "latestVersion")
-                .containsExactly(tuple("org.junit.jupiter", "junit-jupiter", "5.5.2","6.0.0"),
-                                 tuple("org.assertj", "assertj-core", "3.15.0", "6.0.0"))
+            .hasSize(2)
+            .extracting("groupId", "artifactId", "version", "latestVersion")
+            .containsExactly(
+                tuple("org.junit.jupiter", "junit-jupiter", "5.5.2", "6.0.0"),
+                tuple("org.assertj", "assertj-core", "3.15.0", "6.0.0")
+            )
     }
 
     @Test
     fun dependencyManagementUpdates() {
         val project = projectWithDependenciesManagement()
-        every { metadataSourceMock.retrieveAvailableVersions(any(), any(), any()) } returns listOf( DefaultArtifactVersion("6.0.0") )
+        every { metadataSourceMock.retrieveAvailableVersions(any(), any(), any()) } returns listOf(DefaultArtifactVersion("6.0.0"))
         every { artifactFactoryMock.createDependencyArtifact(junitDependency) } returns junitArtifact
         every { artifactFactoryMock.createDependencyArtifact(assertJDependency) } returns assertJArtifact
 
@@ -110,10 +115,12 @@ internal class UpdateResolverTest {
         )
 
         assertThat(updateResolverUnderTest.dependencyManagementUpdates)
-                .hasSize(2)
-                .extracting("groupId", "artifactId", "version", "latestVersion")
-                .containsExactly(tuple("org.junit.jupiter", "junit-jupiter", "5.5.2","6.0.0"),
-                        tuple("org.assertj", "assertj-core", "3.15.0", "6.0.0"))
+            .hasSize(2)
+            .extracting("groupId", "artifactId", "version", "latestVersion")
+            .containsExactly(
+                tuple("org.junit.jupiter", "junit-jupiter", "5.5.2", "6.0.0"),
+                tuple("org.assertj", "assertj-core", "3.15.0", "6.0.0")
+            )
     }
 
     @Test
@@ -134,11 +141,10 @@ internal class UpdateResolverTest {
         reactorModelB.packaging = "jar"
         val reactorModuleBProject = MavenProject(reactorModelB)
 
-
-        every { mavenSession.projects } returns listOf( reactorModuleAProject, reactorModuleBProject )
+        every { mavenSession.projects } returns listOf(reactorModuleAProject, reactorModuleBProject)
         every { artifactFactoryMock.createDependencyArtifact(reactorModuleA) } returns reactorModuleAArtifact
         every { artifactFactoryMock.createDependencyArtifact(reactorModuleB) } returns reactorModuleBArtifact
-        every { metadataSourceMock.retrieveAvailableVersions(any(), any(), any()) } returns listOf( DefaultArtifactVersion("6.0.0") )
+        every { metadataSourceMock.retrieveAvailableVersions(any(), any(), any()) } returns listOf(DefaultArtifactVersion("6.0.0"))
 
         val updateResolverUnderTest = UpdateResolver(
             project,
@@ -184,7 +190,7 @@ internal class UpdateResolverTest {
     private fun projectWithDependencies(): MavenProject {
         val project = MavenProject()
         val originalModel = Model()
-        originalModel.dependencies = listOf(junitDependency,assertJDependency)
+        originalModel.dependencies = listOf(junitDependency, assertJDependency)
         project.originalModel = originalModel
         project.file = File("src/test/resources/poms/dependenciesPom.xml")
         return project
@@ -194,7 +200,7 @@ internal class UpdateResolverTest {
         val project = MavenProject()
         val originalModel = Model()
         val dependencyManagement = DependencyManagement()
-        dependencyManagement.dependencies = listOf(junitDependency,assertJDependency)
+        dependencyManagement.dependencies = listOf(junitDependency, assertJDependency)
         originalModel.dependencyManagement = dependencyManagement
         project.originalModel = originalModel
         project.file = File("src/test/resources/poms/dependencyManagementPom.xml")

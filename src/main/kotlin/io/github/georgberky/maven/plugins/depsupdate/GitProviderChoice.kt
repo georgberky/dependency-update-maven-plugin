@@ -10,8 +10,8 @@ enum class GitProviderChoice {
     },
     JGIT {
         override fun createProvider(localRepositoryPath: Path, settings: Settings, connection: String): GitProvider =
-                JGitProvider(localRepositoryPath, settings, connection)
+            JGitProvider(localRepositoryPath, settings, connection)
     };
 
-    abstract fun createProvider(localRepositoryPath: Path, settings: Settings, connection: String) : GitProvider
+    abstract fun createProvider(localRepositoryPath: Path, settings: Settings, connection: String): GitProvider
 }

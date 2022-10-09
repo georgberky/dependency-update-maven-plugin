@@ -2,13 +2,17 @@ package io.github.georgberky.maven.plugins.depsupdate
 
 import com.jcraft.jsch.Session
 import org.apache.maven.settings.Settings
-import org.bouncycastle.cms.RecipientId.password
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand
 import org.eclipse.jgit.api.TransportConfigCallback
 import org.eclipse.jgit.lib.PersonIdent
 import org.eclipse.jgit.lib.RepositoryBuilder
-import org.eclipse.jgit.transport.*
+import org.eclipse.jgit.transport.JschConfigSessionFactory
+import org.eclipse.jgit.transport.OpenSshConfig
+import org.eclipse.jgit.transport.RefSpec
+import org.eclipse.jgit.transport.SshTransport
+import org.eclipse.jgit.transport.URIish
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.eclipse.jgit.util.FS
 import java.nio.file.Path
 
@@ -39,7 +43,6 @@ class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connec
             .setCreateBranch(true)
             .setName(newBranchName)
             .call()
-
     }
 
     override fun add(filePattern: String) {
@@ -69,19 +72,21 @@ class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connec
                     }
 
                     else -> {
-                        setTransportConfigCallback(TransportConfigCallback { transport ->
-                            if (transport !is SshTransport) return@TransportConfigCallback
+                        setTransportConfigCallback(
+                            TransportConfigCallback { transport ->
+                                if (transport !is SshTransport) return@TransportConfigCallback
 
-                            transport.sshSessionFactory = object : JschConfigSessionFactory() {
-                                override fun configure(hc: OpenSshConfig.Host?, session: Session?) {
-                                }
-
-                                override fun createDefaultJSch(fs: FS?) =
-                                    settings.getServer(uri.host).run {
-                                        super.createDefaultJSch(fs).apply { addIdentity(privateKey, passphrase) }
+                                transport.sshSessionFactory = object : JschConfigSessionFactory() {
+                                    override fun configure(hc: OpenSshConfig.Host?, session: Session?) {
                                     }
+
+                                    override fun createDefaultJSch(fs: FS?) =
+                                        settings.getServer(uri.host).run {
+                                            super.createDefaultJSch(fs).apply { addIdentity(privateKey, passphrase) }
+                                        }
+                                }
                             }
-                        })
+                        )
                     }
                 }
             }

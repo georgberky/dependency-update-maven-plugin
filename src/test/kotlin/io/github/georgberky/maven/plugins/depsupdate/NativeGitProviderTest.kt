@@ -6,7 +6,6 @@ import java.io.File
 import java.nio.file.Path
 import java.util.stream.Collectors
 
-
 class NativeGitProviderTest : GitProviderTest() {
     override fun setupGitProvider(localGitDirectoryPath: Path): GitProvider = NativeGitProvider(localGitDirectoryPath)
 
@@ -26,5 +25,4 @@ class NativeGitProviderTest : GitProviderTest() {
             .collect(Collectors.toList())
         Assertions.assertThat(branchList).contains("refs/heads/newBranch")
     }
-
 }

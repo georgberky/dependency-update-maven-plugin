@@ -9,7 +9,7 @@ import java.nio.file.Path
 
 class JGitProviderTest : GitProviderTest() {
     override fun setupGitProvider(localGitDirectoryPath: Path): GitProvider {
-        return JGitProvider(localGitDirectoryPath, Settings(), "scm:git:"+remoteGitDirectory.toURI().toString())
+        return JGitProvider(localGitDirectoryPath, Settings(), "scm:git:" + remoteGitDirectory.toURI().toString())
     }
 
     @Test // TODO need a solution for testing push with JGitProvider

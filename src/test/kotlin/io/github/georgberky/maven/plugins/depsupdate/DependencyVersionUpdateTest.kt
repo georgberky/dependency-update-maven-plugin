@@ -1,10 +1,7 @@
 package io.github.georgberky.maven.plugins.depsupdate
 
-import org.assertj.core.api.Assertions
-import org.assertj.core.api.Assertions.*
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-
-import org.junit.jupiter.api.Assertions.*
 
 internal class DependencyVersionUpdateTest {
 
@@ -18,7 +15,6 @@ internal class DependencyVersionUpdateTest {
 
         assertThat(extractFromPom(updatedPom, "project.dependencies.dependency.find{ it.artifactId == 'junit-jupiter' }.version")).isEqualTo("5.6.0")
         assertThat(extractFromPom(updatedPom, "project.dependencies.dependency.find{ it.artifactId == 'assertj-core' }.version")).isEqualTo("3.15.0")
-
     }
 
     @Test
