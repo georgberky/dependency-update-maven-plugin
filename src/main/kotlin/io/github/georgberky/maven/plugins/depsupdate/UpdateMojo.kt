@@ -11,8 +11,13 @@ import org.apache.maven.plugins.annotations.Parameter
 import org.apache.maven.project.MavenProject
 import org.apache.maven.settings.Settings
 
+/**
+ * The update mojo goes through all dependencies in the project and
+ * create an own branch per dependency with its newest version.
+*/
 @Mojo(name = "update")
 class UpdateMojo : AbstractMojo() {
+
     @Parameter(defaultValue = "\${session}", readonly = true, required = true)
     lateinit var mavenSession: MavenSession
     @Parameter(defaultValue = "\${project}", required = true)
@@ -21,12 +26,25 @@ class UpdateMojo : AbstractMojo() {
     lateinit var localRepository: ArtifactRepository
     @Parameter(defaultValue = "\${settings}", required = true)
     lateinit var settings: Settings
+
+    /**
+     * Currently, it has to be set, but it is only necessary for the Git provider JGIT.
+     */
     @Parameter(property = "connectionUrl", defaultValue = "\${project.scm.connection}")
     lateinit var connectionUrl: String
+    /**
+     * Currently, it has to be set, but it is only necessary for the Git provider JGIT.
+     */
     @Parameter(property = "developerConnectionUrl", defaultValue = "\${project.scm.developerConnection}")
     lateinit var developerConnectionUrl: String
+    /**
+     * Currently, it has to be set, but it is only necessary for the Git provider JGIT.
+     */
     @Parameter(property = "connectionType", defaultValue = "connection", required = true)
     lateinit var connectionType: String
+    /**
+     * Set which Git provider should use, the installed git binary on your systen (NATIVE) or JGit (JGIT).
+     */
     @Parameter(property = "dependencyUpdate.git.provider", defaultValue = "NATIVE", required = false)
     lateinit var gitProvider: GitProviderChoice
 
