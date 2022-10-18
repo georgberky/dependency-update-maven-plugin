@@ -1,43 +1,50 @@
 package io.github.georgberky.maven.plugins.depsupdate
 
-import com.soebes.itf.jupiter.extension.*
+import com.jcraft.jsch.Session
+import com.soebes.itf.jupiter.extension.MavenGoal
+import com.soebes.itf.jupiter.extension.MavenJupiterExtension
+import com.soebes.itf.jupiter.extension.MavenProject
+import com.soebes.itf.jupiter.extension.MavenTest
 import com.soebes.itf.jupiter.maven.MavenExecutionResult
 import com.soebes.itf.jupiter.maven.MavenProjectResult
 import org.apache.commons.io.FileUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand
+import org.eclipse.jgit.transport.JschConfigSessionFactory
+import org.eclipse.jgit.transport.OpenSshConfig
+import org.eclipse.jgit.transport.SshTransport
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.util.stream.Collectors.toList
 import com.soebes.itf.extension.assertj.MavenExecutionResultAssert.assertThat as mavenAssertThat
 
+
 @MavenJupiterExtension
 @MavenProject("jgitProviderIsSet_scmConfigIsSet")
 internal class UpdateMojoJGit2IT {
-
-    @TempDir
-    lateinit var remoteRepo: File
 
     lateinit var repo: Git
 
     @BeforeEach
     internal fun setUp(result: MavenProjectResult) {
-        FileUtils.copyDirectory(result.targetProjectDirectory, remoteRepo)
-
-        repo = Git.init().setDirectory(remoteRepo).call()
-        repo.add().addFilepattern(".").call();
-        repo.commit()
-            .setAuthor("Schorsch", "georg@email.com")
-            .setMessage("Initial commit.")
-            .call()
-
+        val uri = "ssh://git@localhost:2222/srv/git/jgit-test.git"
         FileUtils.deleteDirectory(result.targetProjectDirectory)
 
+        val sshSessionFactory = object: JschConfigSessionFactory() {
+            override fun configure(host: OpenSshConfig.Host?, session: Session?) {
+                session?.setPassword("12345")
+            }
+
+        }
         repo = Git.cloneRepository()
-            .setURI(remoteRepo.toURI().toString())
+            .setURI(uri)
             .setDirectory(result.targetProjectDirectory)
+            .setTransportConfigCallback({ transport ->
+            val sshTransport = transport as SshTransport
+            sshTransport.sshSessionFactory = sshSessionFactory
+        })
             .call()
     }
 
@@ -59,7 +66,7 @@ internal class UpdateMojoJGit2IT {
             .describedAs("should create remote feature branches for two dependencies")
             .filteredOn { it.startsWith("refs/remotes/") }
             .filteredOn { !it.contains("origin/master") }
-            .hasSize(2);
+            .hasSize(2)
 
     }
 }

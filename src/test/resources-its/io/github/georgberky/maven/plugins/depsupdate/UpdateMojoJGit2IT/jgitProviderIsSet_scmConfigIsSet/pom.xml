@@ -7,7 +7,7 @@
     <version>0.6.0</version>
 
     <scm>
-        <connection>scm:git:file://</connection>
+        <connection>scm:git:ssh://git@localhost:2222/srv/git/jgit-test.git</connection>
     </scm>
 
     <dependencies>
