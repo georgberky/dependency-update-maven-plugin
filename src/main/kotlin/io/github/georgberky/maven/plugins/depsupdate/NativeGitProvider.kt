@@ -14,7 +14,8 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
         IOUtils.toString(process.inputStream, StandardCharsets.UTF_8).trim()
     }
 
-    private val initialBranch: String = runInProcessWithOutput(gitCommand, "rev-parse", "--abbrev-ref", "HEAD").second.trim()
+    private val initialBranch: String =
+        runInProcessWithOutput(gitCommand, "rev-parse", "--abbrev-ref", "HEAD").second.trim()
 
     override fun hasRemoteBranch(remoteBranchName: String): Boolean {
         val processResult = runInProcessWithOutput(gitCommand, "branch", "--all")
@@ -59,33 +60,37 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     }
 
     private fun runInProcessWithOutput(vararg command: String): Pair<Int, String> {
-        val result = run(*command)
-        val returnValue = result.first
+        val (exitCode, stdout, stderr) = run(*command)
 
-        if (returnValue != 0) {
+        if (exitCode != 0) {
             throw ProcessException(
                 "Native git invocation failed. " +
                     "Command: ${command.joinToString(" ")}, " +
-                    "return value was: $returnValue\n" +
-                    "stdout was: ${result.second}\n" +
-                    "stderr was: ${result.third}"
+                    "return value was: $exitCode\n" +
+                    "stdout was: $stdout\n" +
+                    "stderr was: $stderr"
             )
         }
 
-        return Pair(returnValue, result.second)
+        return Pair(exitCode, stdout)
     }
 
-    open fun run(vararg command: String): Triple<Int, String, String> {
+    open fun run(vararg command: String): ProcessResult {
         val process = ProcessBuilder(*command)
             .directory(localRepositoryDirectory.toFile())
             .start()
-
         val returnValue = process.waitFor()
         val processOutput = IOUtils.toString(process.inputStream, StandardCharsets.UTF_8)
         val processErr = IOUtils.toString(process.errorStream, StandardCharsets.UTF_8)
-
-        return Triple(returnValue, processOutput, processErr)
+        val (exitCode, stdout, stderr) = Triple(returnValue, processOutput, processErr)
+        return ProcessResult(exitCode, stdout, stderr)
     }
+
+    data class ProcessResult(
+        val exitCode: Int,
+        val stdout: String,
+        val stderr: String
+    )
 
     class ProcessException(message: String?) : RuntimeException(message)
 }
