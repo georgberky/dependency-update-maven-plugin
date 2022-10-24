@@ -71,7 +71,7 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
         val processOutput = IOUtils.toString(process.inputStream, StandardCharsets.UTF_8)
         val processErr = IOUtils.toString(process.errorStream, StandardCharsets.UTF_8)
         val (exitCode, stdout, stderr) = Triple(returnValue, processOutput, processErr)
-        return ProcessResult(command.joinToString { " " }, exitCode, stdout, stderr)
+        return ProcessResult(command.joinToString(" "), exitCode, stdout, stderr)
     }
 
     data class ProcessResult(
@@ -86,10 +86,10 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
             }
             throw ProcessException(
                 "Native git invocation failed. " +
-                        "Command: $command, " +
-                        "return value was: $exitCode\n" +
-                        "stdout was: $stdout\n" +
-                        "stderr was: $stderr"
+                    "Command: $command, " +
+                    "return value was: $exitCode\n" +
+                    "stdout was: $stdout\n" +
+                    "stderr was: $stderr"
             )
         }
     }
