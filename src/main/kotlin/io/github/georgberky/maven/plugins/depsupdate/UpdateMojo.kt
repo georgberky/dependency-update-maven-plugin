@@ -35,19 +35,19 @@ class UpdateMojo : AbstractMojo() {
      */
     @Parameter(property = "connectionUrl", defaultValue = "\${project.scm.connection}")
     lateinit var connectionUrl: String
-    
+
     /**
      * Currently, it has to be set, but it is only necessary for the Git provider JGIT.
      */
     @Parameter(property = "developerConnectionUrl", defaultValue = "\${project.scm.developerConnection}")
     lateinit var developerConnectionUrl: String
-    
+
     /**
      * Currently, it has to be set, but it is only necessary for the Git provider JGIT.
      */
     @Parameter(property = "connectionType", defaultValue = "connection", required = true)
     lateinit var connectionType: String
-    
+
     /**
      * Set which Git provider should use, the installed git binary on your systen (NATIVE) or JGit (JGIT).
      */
