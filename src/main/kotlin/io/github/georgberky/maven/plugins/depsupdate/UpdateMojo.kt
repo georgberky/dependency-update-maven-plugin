@@ -14,7 +14,7 @@ import org.apache.maven.settings.Settings
 /**
  * The update mojo goes through all dependencies in the project and
  * create an own branch per dependency with its newest version.
-*/
+ */
 @Mojo(name = "update")
 class UpdateMojo : AbstractMojo() {
 
@@ -54,6 +54,12 @@ class UpdateMojo : AbstractMojo() {
     @Parameter(property = "dependencyUpdate.git.provider", defaultValue = "NATIVE", required = false)
     lateinit var gitProvider: GitProviderChoice
 
+    /**
+     * Set how existing branches with older updates should be handled: Log a warning (WARN) or update the branch (UPDATE).
+     */
+    @Parameter(property = "dependencyUpdate.branchUpdate.strategy", defaultValue = "WARN", required = false)
+    lateinit var branchUpdateStrategyChoice: BranchUpdateStrategyChoice
+
     @Component
     lateinit var artifactFactory: ArtifactFactory
 
@@ -64,6 +70,7 @@ class UpdateMojo : AbstractMojo() {
         get() = if (connectionType == "developerConnection") developerConnectionUrl else connectionUrl
 
     override fun execute() {
+        val updateStrategy = branchUpdateStrategyChoice.create()
         withGit { git ->
             val updateCandidates = UpdateResolver(
                 mavenProject = mavenProject,
@@ -83,12 +90,7 @@ class UpdateMojo : AbstractMojo() {
                 .filter { (_, branchName) -> git.hasRemoteBranchWithPrefix(branchName.prefix()) }
 
             updateCandidatesWithExistingUpdateBranch
-                .forEach { (_, branchName) ->
-                    log.warn(
-                        "Dependency '${branchName.prefix()}' already has a branch for a previous version update. " +
-                            "Please merge it first"
-                    )
-                }
+                .forEach { (_, branchName) -> updateStrategy.handle(branchName, log) }
 
             val updatesWithoutBranchForVersion =
                 updateCandidates.filterNot { (_, branchName) -> git.hasRemoteBranchWithPrefix(branchName.prefix()) }
