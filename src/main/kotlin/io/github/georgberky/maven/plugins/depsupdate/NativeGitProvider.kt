@@ -15,16 +15,16 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     }
 
     private val initialBranch: String =
-        run(gitCommand, "rev-parse", "--abbrev-ref", "HEAD").orThrow().stdout.trim()
+        run(gitCommand, "rev-parse", "--abbrev-ref", "HEAD").stdout.trim()
 
     override fun hasRemoteBranch(remoteBranchName: String): Boolean {
-        val processResult = run(gitCommand, "branch", "--all").orThrow()
+        val processResult = run(gitCommand, "branch", "--all")
         val processOutput = processResult.stdout
         return processOutput.contains("remotes/origin/" + remoteBranchName)
     }
 
     override fun hasRemoteBranchWithPrefix(remoteBranchNamePrefix: String): Boolean {
-        val processResult = run(gitCommand, "branch", "--all").orThrow()
+        val processResult = run(gitCommand, "branch", "--all")
         val processOutput = processResult.stdout
         return processOutput.lines()
             .map { it.trim() }
@@ -32,23 +32,23 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     }
 
     override fun checkoutNewBranch(branchName: String) {
-        run(gitCommand, "checkout", "-b", branchName).orThrow()
+        run(gitCommand, "checkout", "-b", branchName)
     }
 
     override fun add(filePattern: String) {
-        run(gitCommand, "add", filePattern).orThrow()
+        run(gitCommand, "add", filePattern)
     }
 
     override fun commit(author: String, email: String, message: String) {
-        run(gitCommand, "commit", "-m", message, "--author='$author <$email>'").orThrow()
+        run(gitCommand, "commit", "-m", message, "--author='$author <$email>'")
     }
 
     override fun push(localBranchName: String) {
-        run(gitCommand, "push", "--set-upstream", "origin", localBranchName).orThrow()
+        run(gitCommand, "push", "--set-upstream", "origin", localBranchName)
     }
 
     override fun checkoutInitialBranch() {
-        run(gitCommand, "checkout", initialBranch).orThrow()
+        run(gitCommand, "checkout", initialBranch)
     }
 
     override fun close() {
@@ -64,7 +64,7 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
         val stdout = IOUtils.toString(process.inputStream, StandardCharsets.UTF_8)
         val stderr = IOUtils.toString(process.errorStream, StandardCharsets.UTF_8)
 
-        return ProcessResult(command, exitCode, stdout, stderr)
+        return ProcessResult(command, exitCode, stdout, stderr).orThrow()
     }
 
     data class ProcessResult(

@@ -10,6 +10,7 @@ internal class NativeGitProviderErrorHandlingTest {
 
     private var processOutput: String = ""
     private var returnValue: Int = 0
+
     private lateinit var gitProvider: NativeGitProvider
 
     @TempDir
@@ -19,7 +20,7 @@ internal class NativeGitProviderErrorHandlingTest {
     internal fun setUp() {
         gitProvider = object : NativeGitProvider(tempDir.toPath()) {
             override fun run(vararg command: String): ProcessResult {
-                return ProcessResult(command, returnValue, processOutput, "")
+                return ProcessResult(command, returnValue, processOutput, "").orThrow()
             }
         }
     }
