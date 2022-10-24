@@ -19,7 +19,7 @@ internal class NativeGitProviderErrorHandlingTest {
     internal fun setUp() {
         gitProvider = object : NativeGitProvider(tempDir.toPath()) {
             override fun run(vararg command: String): ProcessResult {
-                return ProcessResult(command.joinToString(" "), returnValue, processOutput, "")
+                return ProcessResult(command, returnValue, processOutput, "")
             }
         }
     }
