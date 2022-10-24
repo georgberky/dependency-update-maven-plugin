@@ -15,17 +15,17 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     }
 
     private val initialBranch: String =
-        runInProcessWithOutput(gitCommand, "rev-parse", "--abbrev-ref", "HEAD").second.trim()
+        runInProcessWithOutput(gitCommand, "rev-parse", "--abbrev-ref", "HEAD").stdout.trim()
 
     override fun hasRemoteBranch(remoteBranchName: String): Boolean {
         val processResult = runInProcessWithOutput(gitCommand, "branch", "--all")
-        val processOutput = processResult.second
+        val processOutput = processResult.stdout
         return processOutput.contains("remotes/origin/" + remoteBranchName)
     }
 
     override fun hasRemoteBranchWithPrefix(remoteBranchNamePrefix: String): Boolean {
         val processResult = runInProcessWithOutput(gitCommand, "branch", "--all")
-        val processOutput = processResult.second
+        val processOutput = processResult.stdout
         return processOutput.lines()
             .map { it.trim() }
             .any { it.startsWith("remotes/origin/" + remoteBranchNamePrefix) }
@@ -56,11 +56,12 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     }
 
     private fun runInProcess(vararg command: String): Int {
-        return runInProcessWithOutput(*command).first
+        return runInProcessWithOutput(*command).exitCode
     }
 
-    private fun runInProcessWithOutput(vararg command: String): Pair<Int, String> {
-        val (exitCode, stdout, stderr) = run(*command)
+    private fun runInProcessWithOutput(vararg command: String): ProcessResult {
+        val processResult = run(*command)
+        val (exitCode, stdout, stderr) = processResult
 
         if (exitCode != 0) {
             throw ProcessException(
@@ -72,7 +73,7 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
             )
         }
 
-        return Pair(exitCode, stdout)
+        return processResult
     }
 
     open fun run(vararg command: String): ProcessResult {
