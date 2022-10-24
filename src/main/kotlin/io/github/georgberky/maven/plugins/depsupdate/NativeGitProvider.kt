@@ -60,20 +60,7 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
     }
 
     private fun runInProcessWithOutput(vararg command: String): ProcessResult {
-        val processResult = run(*command)
-        val (exitCode, stdout, stderr) = processResult
-
-        if (exitCode != 0) {
-            throw ProcessException(
-                "Native git invocation failed. " +
-                    "Command: ${command.joinToString(" ")}, " +
-                    "return value was: $exitCode\n" +
-                    "stdout was: $stdout\n" +
-                    "stderr was: $stderr"
-            )
-        }
-
-        return processResult
+        return run(*command).orThrow()
     }
 
     open fun run(vararg command: String): ProcessResult {
@@ -84,14 +71,28 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
         val processOutput = IOUtils.toString(process.inputStream, StandardCharsets.UTF_8)
         val processErr = IOUtils.toString(process.errorStream, StandardCharsets.UTF_8)
         val (exitCode, stdout, stderr) = Triple(returnValue, processOutput, processErr)
-        return ProcessResult(exitCode, stdout, stderr)
+        return ProcessResult(command.joinToString { " " }, exitCode, stdout, stderr)
     }
 
     data class ProcessResult(
+        val command: String,
         val exitCode: Int,
         val stdout: String,
         val stderr: String
-    )
+    ) {
+        fun orThrow(): ProcessResult {
+            if (exitCode == 0) {
+                return this
+            }
+            throw ProcessException(
+                "Native git invocation failed. " +
+                        "Command: $command, " +
+                        "return value was: $exitCode\n" +
+                        "stdout was: $stdout\n" +
+                        "stderr was: $stderr"
+            )
+        }
+    }
 
     class ProcessException(message: String?) : RuntimeException(message)
 }
