@@ -37,11 +37,11 @@ class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connec
             .any { it.name.startsWith("refs/remotes/origin/$remoteBranchNamePrefix") }
     }
 
-    override fun checkoutNewBranch(newBranchName: String) {
+    override fun checkoutNewBranch(branchName: String) {
         git.checkout()
             .setStartPoint(git.repository.fullBranch)
             .setCreateBranch(true)
-            .setName(newBranchName)
+            .setName(branchName)
             .call()
     }
 
@@ -58,9 +58,9 @@ class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connec
             .call()
     }
 
-    override fun push(branchName: String) {
+    override fun push(localBranchName: String) {
         git.push()
-            .setRefSpecs(RefSpec("$branchName:$branchName"))
+            .setRefSpecs(RefSpec("$localBranchName:$localBranchName"))
             .apply {
                 val uri = URIish(connection.removePrefix("scm:git:"))
 

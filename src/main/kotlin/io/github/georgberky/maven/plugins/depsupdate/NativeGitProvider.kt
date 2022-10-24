@@ -30,8 +30,8 @@ open class NativeGitProvider(val localRepositoryDirectory: Path) : GitProvider {
             .any { it.startsWith("remotes/origin/" + remoteBranchNamePrefix) }
     }
 
-    override fun checkoutNewBranch(newBranchName: String) {
-        runInProcess(gitCommand, "checkout", "-b", newBranchName)
+    override fun checkoutNewBranch(branchName: String) {
+        runInProcess(gitCommand, "checkout", "-b", branchName)
     }
 
     override fun add(filePattern: String) {
