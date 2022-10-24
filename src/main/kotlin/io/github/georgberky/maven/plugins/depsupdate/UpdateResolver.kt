@@ -27,24 +27,30 @@ class UpdateResolver(
 
     val parentUpdates
         get() = listOfNotNull(mavenProject.parentArtifact)
-                .map { artifact -> ParentVersionUpdate(
-                        artifact.groupId,
-                        artifact.artifactId,
-                        artifact.version,
-                        retrieveLatestVersion(artifact),
-                        pomXml()) }
+            .map { artifact ->
+                ParentVersionUpdate(
+                    artifact.groupId,
+                    artifact.artifactId,
+                    artifact.version,
+                    retrieveLatestVersion(artifact),
+                    pomXml()
+                )
+            }
 
     val dependencyManagementUpdates
         get() = (mavenProject.originalModel.dependencyManagement?.dependencies ?: listOf())
             .filter(Dependency::isConcrete)
             .filterNot { isReactorArtifact(it) }
             .mapNotNull(artifactFactory::createDependencyArtifact)
-            .map { artifact -> DependencyManagementVersionUpdate(
+            .map { artifact ->
+                DependencyManagementVersionUpdate(
                     artifact.groupId,
                     artifact.artifactId,
                     artifact.version,
                     retrieveLatestVersion(artifact),
-                    pomXml())}
+                    pomXml()
+                )
+            }
 
     val dependencyUpdates
         get() = mavenProject.originalModel.dependencies
@@ -52,12 +58,15 @@ class UpdateResolver(
             .filterNot { isReactorArtifact(it) }
             .onEach { println("dependencyUpdates: $it") }
             .mapNotNull(artifactFactory::createDependencyArtifact)
-            .map { a -> DependencyVersionUpdate(
+            .map { a ->
+                DependencyVersionUpdate(
                     a.groupId,
                     a.artifactId,
                     a.version,
                     retrieveLatestVersion(a),
-                    pomXml())}
+                    pomXml()
+                )
+            }
 
     /**
      * Returns the latest version or (if not resolvable) the String {@code "null"}.
@@ -75,14 +84,14 @@ class UpdateResolver(
     private fun isReactorArtifact(dependency: Dependency): Boolean =
         reactorDependencies
             .any { module ->
-                dependency.groupId == module.groupId
-                        && dependency.artifactId == module.artifactId
-                        && dependency.version == module.version
-                        && dependency.type == module.packaging
+                dependency.groupId == module.groupId &&
+                    dependency.artifactId == module.artifactId &&
+                    dependency.version == module.version &&
+                    dependency.type == module.packaging
             }
 
-    private fun pomXml() : Document {
+    private fun pomXml(): Document {
         return Jsoup.parse(mavenProject.file.readText(), "", Parser.xmlParser())
-                .apply { outputSettings().prettyPrint(false) }
+            .apply { outputSettings().prettyPrint(false) }
     }
 }

@@ -26,7 +26,7 @@ abstract class GitProviderTest() {
         providerUnderTest = setupGitProvider(localGitDirectory.toPath())
     }
 
-    abstract fun setupGitProvider(localGitDirectoryPath: Path) : GitProvider
+    abstract fun setupGitProvider(localGitDirectoryPath: Path): GitProvider
 
     @Test
     internal fun `can add files`() {
@@ -45,7 +45,7 @@ abstract class GitProviderTest() {
         fileToCommit.createNewFile()
         localGitRepo.add().addFilepattern(fileToCommit.name).call()
 
-        providerUnderTest.commit("Sandra Parsick","sandra@email.com", "Hello George")
+        providerUnderTest.commit("Sandra Parsick", "sandra@email.com", "Hello George")
 
         assertThat(localGitRepo.status().call().isClean)
             .describedAs("repository status should be clean")
@@ -68,7 +68,7 @@ abstract class GitProviderTest() {
     internal fun `has no remote branch`() {
         val hasRemoteBranch = providerUnderTest.hasRemoteBranch("remoteBranch")
 
-        assertThat(hasRemoteBranch).isFalse();
+        assertThat(hasRemoteBranch).isFalse()
     }
 
     @Test
@@ -76,7 +76,7 @@ abstract class GitProviderTest() {
         remoteGitRepo.branchCreate().setName("myNewRemoteBranch").call()
         localGitRepo.fetch().call()
 
-        val hasRemoteBranch = providerUnderTest.hasRemoteBranch("myNewRemoteBranch");
+        val hasRemoteBranch = providerUnderTest.hasRemoteBranch("myNewRemoteBranch")
 
         assertThat(hasRemoteBranch)
             .describedAs("remote branch should exist")
@@ -103,7 +103,7 @@ abstract class GitProviderTest() {
         remoteGitRepo.branchCreate().setName("branchName-suffix").call()
         localGitRepo.fetch().call()
 
-        val hasRemoteBranchWithPrefix = providerUnderTest.hasRemoteBranchWithPrefix("branchName");
+        val hasRemoteBranchWithPrefix = providerUnderTest.hasRemoteBranchWithPrefix("branchName")
 
         assertThat(hasRemoteBranchWithPrefix)
             .describedAs("remote branch with prefix should exist")

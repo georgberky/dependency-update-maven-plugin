@@ -7,9 +7,9 @@ import org.jsoup.parser.Parser
 import java.io.File
 
 fun readPom(pomPath: String): Document =
-        Jsoup.parse(File(pomPath).readText(), "", Parser.xmlParser()).apply {
-            outputSettings().prettyPrint(false)
-        }
+    Jsoup.parse(File(pomPath).readText(), "", Parser.xmlParser()).apply {
+        outputSettings().prettyPrint(false)
+    }
 
 fun extractFromPom(pom: Document, xmlPath: String) =
-        XmlPath.with(pom.html()).getString(xmlPath)
+    XmlPath.with(pom.html()).getString(xmlPath)
