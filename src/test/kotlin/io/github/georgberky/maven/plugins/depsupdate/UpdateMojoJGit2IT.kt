@@ -1,5 +1,7 @@
 package io.github.georgberky.maven.plugins.depsupdate
 
+import com.google.common.io.Files
+import com.jcraft.jsch.HostKey
 import com.jcraft.jsch.Session
 import com.soebes.itf.jupiter.extension.MavenGoal
 import com.soebes.itf.jupiter.extension.MavenJupiterExtension
@@ -16,6 +18,14 @@ import org.eclipse.jgit.transport.OpenSshConfig
 import org.eclipse.jgit.transport.SshTransport
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.io.TempDir
+import org.testcontainers.containers.BindMode
+import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
+import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.containers.wait.strategy.WaitStrategy
+import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.utility.DockerImageName
 import java.io.File
 import java.util.stream.Collectors.toList
 import com.soebes.itf.extension.assertj.MavenExecutionResultAssert.assertThat as mavenAssertThat
@@ -23,21 +33,60 @@ import com.soebes.itf.extension.assertj.MavenExecutionResultAssert.assertThat as
 
 @MavenJupiterExtension
 @MavenProject("jgitProviderIsSet_scmConfigIsSet")
+@Testcontainers
 internal class UpdateMojoJGit2IT {
+
+    @Container
+    var gitServer = GenericContainer(DockerImageName.parse("rockstorm/git-server"))
+        .withEnv("GIT_PASSWORD", "12345")
+        .withExposedPorts(22)
+        .waitingFor(Wait.forLogMessage("No user .*", 1))
+
+    @TempDir
+    lateinit var remoteRepo: File
 
     lateinit var repo: Git
 
     @BeforeEach
     internal fun setUp(result: MavenProjectResult) {
-        val uri = "ssh://git@localhost:2222/srv/git/jgit-test.git"
-        FileUtils.deleteDirectory(result.targetProjectDirectory)
+        gitServer.execInContainer("mkdir", "-p", "/srv/git/jgit-test.git")
+        gitServer.execInContainer("git","init", "--bare", "/srv/git/jgit-test.git")
+        gitServer.execInContainer("chown","-R", "git:git", "/srv")
+        val gitPort = gitServer.getMappedPort(22)
 
         val sshSessionFactory = object: JschConfigSessionFactory() {
             override fun configure(host: OpenSshConfig.Host?, session: Session?) {
                 session?.setPassword("12345")
+                session?.setConfig("StrictHostKeyChecking", "no")
             }
-
         }
+
+        val uri = "ssh://git@localhost:${gitPort}/srv/git/jgit-test.git"
+        val remoteRepoGit = Git.cloneRepository()
+            .setURI(uri)
+            .setDirectory(remoteRepo)
+            .setTransportConfigCallback { transport ->
+                val sshTransport = transport as SshTransport
+                sshTransport.sshSessionFactory = sshSessionFactory
+            }
+            .call()
+
+        FileUtils.copyDirectory(result.targetProjectDirectory, remoteRepo)
+        remoteRepoGit.add().addFilepattern(".").call()
+        remoteRepoGit.commit()
+            .setAuthor("Schorsch", "georg@email.com")
+            .setMessage("Initial commit.")
+            .call()
+        remoteRepoGit
+            .push()
+            .setTransportConfigCallback{ transport ->
+                val sshTransport = transport as SshTransport
+                sshTransport.sshSessionFactory = sshSessionFactory
+            }.call()
+
+        FileUtils.deleteDirectory(result.targetProjectDirectory)
+
+
         repo = Git.cloneRepository()
             .setURI(uri)
             .setDirectory(result.targetProjectDirectory)
