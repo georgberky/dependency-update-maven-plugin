@@ -70,7 +70,7 @@
         <kotlin.version>1.6.0</kotlin.version>
         <maven-plugin.version>3.6.0</maven-plugin.version>
         <dokka.version>1.7.10</dokka.version>
-        <itf.version>0.10.0</itf.version>
+        <itf.version>0.11.0</itf.version>
         <spotless.version>2.27.1</spotless.version>
         <ktlint.version>0.47.1</ktlint.version>
         <maven.compiler.source>1.8</maven.compiler.source>

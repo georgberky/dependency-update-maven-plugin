@@ -5,6 +5,7 @@ import com.jcraft.jsch.HostKey
 import com.jcraft.jsch.Session
 import com.soebes.itf.jupiter.extension.MavenGoal
 import com.soebes.itf.jupiter.extension.MavenJupiterExtension
+import com.soebes.itf.jupiter.extension.MavenOption
 import com.soebes.itf.jupiter.extension.MavenProject
 import com.soebes.itf.jupiter.extension.MavenTest
 import com.soebes.itf.jupiter.maven.MavenExecutionResult
@@ -99,6 +100,7 @@ internal class UpdateMojoJGit2IT {
 
     @MavenTest
     @MavenGoal("\${project.groupId}:\${project.artifactId}:\${project.version}:update")
+    @MavenOption("--settings settings.xml")
     fun jgitProviderIsSet_scmConfigIsSet(result: MavenExecutionResult) {
         val branchList = repo.branchList()
             .setListMode(ListBranchCommand.ListMode.ALL)
