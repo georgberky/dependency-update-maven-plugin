@@ -63,6 +63,7 @@ internal class UpdateMojoJGit2IT {
         }
 
         val uri = "ssh://git@localhost:${gitPort}/srv/git/jgit-test.git"
+        //Todo replace scm connection in pom.xml
         val remoteRepoGit = Git.cloneRepository()
             .setURI(uri)
             .setDirectory(remoteRepo)

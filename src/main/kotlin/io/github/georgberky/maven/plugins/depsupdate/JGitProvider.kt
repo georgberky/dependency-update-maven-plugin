@@ -1,5 +1,6 @@
 package io.github.georgberky.maven.plugins.depsupdate
 
+import com.jcraft.jsch.JSch
 import com.jcraft.jsch.Session
 import org.apache.maven.settings.Settings
 import org.eclipse.jgit.api.Git
@@ -78,15 +79,23 @@ class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connec
 
                                 transport.sshSessionFactory = object : JschConfigSessionFactory() {
                                     override fun configure(hc: OpenSshConfig.Host?, session: Session?) {
+                                        val (username, password) = usernamePassword(uri)
+                                        if (password != null) {
+                                            session?.setPassword(password)
+                                        }
                                     }
 
                                     override fun createDefaultJSch(fs: FS?) =
                                         settings.getServer(uri.host).run {
-                                            super.createDefaultJSch(fs).apply { addIdentity(privateKey, passphrase) }
+                                            if (password == null) {
+                                                super.createDefaultJSch(fs)
+                                                    .apply { addIdentity(privateKey, passphrase) }
+                                            } else {
+                                                super.createDefaultJSch(fs)
+                                            }
                                         }
                                 }
-                            }
-                        )
+                            })
                     }
                 }
             }
