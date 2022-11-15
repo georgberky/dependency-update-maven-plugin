@@ -26,7 +26,6 @@ import java.io.File
 import java.util.stream.Collectors.toList
 import com.soebes.itf.extension.assertj.MavenExecutionResultAssert.assertThat as mavenAssertThat
 
-
 @MavenJupiterExtension
 @MavenProject("jgitProviderIsSet_scmConfigIsSet")
 @Testcontainers
@@ -46,19 +45,19 @@ internal class UpdateMojoJGitIT {
     @BeforeEach
     internal fun setUp(result: MavenProjectResult) {
         gitServer.execInContainer("mkdir", "-p", "/srv/git/jgit-test.git")
-        gitServer.execInContainer("git","init", "--bare", "/srv/git/jgit-test.git")
-        gitServer.execInContainer("chown","-R", "git:git", "/srv")
+        gitServer.execInContainer("git", "init", "--bare", "/srv/git/jgit-test.git")
+        gitServer.execInContainer("chown", "-R", "git:git", "/srv")
         val gitPort = gitServer.getMappedPort(22)
 
-        val sshSessionFactory = object: JschConfigSessionFactory() {
+        val sshSessionFactory = object : JschConfigSessionFactory() {
             override fun configure(host: OpenSshConfig.Host?, session: Session?) {
                 session?.setPassword("12345")
                 session?.setConfig("StrictHostKeyChecking", "no")
             }
         }
 
-        val uri = "ssh://git@localhost:${gitPort}/srv/git/jgit-test.git"
-        //Todo replace scm connection in pom.xml
+        val uri = "ssh://git@localhost:$gitPort/srv/git/jgit-test.git"
+        // Todo replace scm connection in pom.xml
         val remoteRepoGit = Git.cloneRepository()
             .setURI(uri)
             .setDirectory(remoteRepo)
@@ -76,13 +75,12 @@ internal class UpdateMojoJGitIT {
             .call()
         remoteRepoGit
             .push()
-            .setTransportConfigCallback{ transport ->
+            .setTransportConfigCallback { transport ->
                 val sshTransport = transport as SshTransport
                 sshTransport.sshSessionFactory = sshSessionFactory
             }.call()
 
         FileUtils.deleteDirectory(result.targetProjectDirectory)
-
 
         repo = Git.cloneRepository()
             .setURI(uri)
@@ -90,13 +88,13 @@ internal class UpdateMojoJGitIT {
             .setTransportConfigCallback({ transport ->
                 val sshTransport = transport as SshTransport
                 sshTransport.sshSessionFactory = sshSessionFactory
-             })
+            })
             .call()
     }
 
     @MavenTest
     @MavenGoal("\${project.groupId}:\${project.artifactId}:\${project.version}:update")
-    @MavenOption(value = "--settings", parameter= "settings.xml")
+    @MavenOption(value = "--settings", parameter = "settings.xml")
     fun jgitProviderIsSet_scmConfigIsSet(result: MavenExecutionResult) {
         val branchList = repo.branchList()
             .setListMode(ListBranchCommand.ListMode.ALL)
@@ -114,6 +112,5 @@ internal class UpdateMojoJGitIT {
             .filteredOn { it.startsWith("refs/remotes/") }
             .filteredOn { !it.contains("origin/master") }
             .hasSize(2)
-
     }
 }

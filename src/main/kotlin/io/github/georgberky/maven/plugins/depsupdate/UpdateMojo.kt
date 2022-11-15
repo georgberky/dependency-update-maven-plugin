@@ -120,8 +120,10 @@ class UpdateMojo : AbstractMojo() {
 
     private fun configurationCheck() {
         if (gitProvider == GitProviderChoice.JGIT && connection.isEmpty()) {
-            throw MojoExecutionException("You chose JGIT as GitProvider. Therefore, you have to set properties " +
-                    "'developerConnectionUrl' or 'connectionUrl' dependent on the 'connectionType'")
+            throw MojoExecutionException(
+                "You chose JGIT as GitProvider. Therefore, you have to set properties " +
+                    "'developerConnectionUrl' or 'connectionUrl' dependent on the 'connectionType'"
+            )
         }
     }
 

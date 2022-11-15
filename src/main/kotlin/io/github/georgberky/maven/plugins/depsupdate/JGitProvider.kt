@@ -1,6 +1,5 @@
 package io.github.georgberky.maven.plugins.depsupdate
 
-import com.jcraft.jsch.JSch
 import com.jcraft.jsch.JSch.setConfig
 import com.jcraft.jsch.Session
 import org.apache.maven.settings.Settings
@@ -74,32 +73,33 @@ class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connec
                     }
 
                     else -> {
-                        setTransportConfigCallback(TransportConfigCallback { transport ->
-                            if (transport !is SshTransport) return@TransportConfigCallback
-                            val (_, password) = usernamePassword(uri)
-                            if (password != null) {
-                                transport.sshSessionFactory = object : JschConfigSessionFactory() {
-                                    override fun configure(hc: OpenSshConfig.Host?, session: Session?) {
-                                        session?.setPassword(password)
-                                        session?.setConfig("StrictHostKeyChecking", "no")
-                                    }
-                                }
-                            } else {
-                                transport.sshSessionFactory = object : JschConfigSessionFactory() {
-                                    override fun configure(hc: OpenSshConfig.Host?, session: Session?) {
-
-                                    }
-
-                                    override fun createDefaultJSch(fs: FS?) =
-                                        settings.getServer(uri.host).run {
-                                            super.createDefaultJSch(fs).apply {
-                                                addIdentity(privateKey, passphrase)
-                                                setConfig("StrictHostKeyChecking", "no")
-                                                }
+                        setTransportConfigCallback(
+                            TransportConfigCallback { transport ->
+                                if (transport !is SshTransport) return@TransportConfigCallback
+                                val (_, password) = usernamePassword(uri)
+                                if (password != null) {
+                                    transport.sshSessionFactory = object : JschConfigSessionFactory() {
+                                        override fun configure(hc: OpenSshConfig.Host?, session: Session?) {
+                                            session?.setPassword(password)
+                                            session?.setConfig("StrictHostKeyChecking", "no")
                                         }
+                                    }
+                                } else {
+                                    transport.sshSessionFactory = object : JschConfigSessionFactory() {
+                                        override fun configure(hc: OpenSshConfig.Host?, session: Session?) {
+                                        }
+
+                                        override fun createDefaultJSch(fs: FS?) =
+                                            settings.getServer(uri.host).run {
+                                                super.createDefaultJSch(fs).apply {
+                                                    addIdentity(privateKey, passphrase)
+                                                    setConfig("StrictHostKeyChecking", "no")
+                                                }
+                                            }
+                                    }
                                 }
                             }
-                        })
+                        )
                     }
                 }
             }
@@ -120,6 +120,10 @@ class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connec
     }
 
     private fun usernamePassword(uri: URIish) =
-        if (uri.user != null && uri.pass != null) uri.user to uri.pass else settings.getServer(uri.host)
-            .run { username to password }
+        if (uri.user != null && uri.pass != null) {
+            uri.user to uri.pass
+        } else {
+            settings.getServer(uri.host)
+                .run { username to password }
+        }
 }
