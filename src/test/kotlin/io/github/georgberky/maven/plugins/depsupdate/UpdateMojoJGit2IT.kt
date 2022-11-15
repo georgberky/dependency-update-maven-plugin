@@ -93,15 +93,15 @@ internal class UpdateMojoJGit2IT {
             .setURI(uri)
             .setDirectory(result.targetProjectDirectory)
             .setTransportConfigCallback({ transport ->
-            val sshTransport = transport as SshTransport
-            sshTransport.sshSessionFactory = sshSessionFactory
-        })
+                val sshTransport = transport as SshTransport
+                sshTransport.sshSessionFactory = sshSessionFactory
+             })
             .call()
     }
 
     @MavenTest
     @MavenGoal("\${project.groupId}:\${project.artifactId}:\${project.version}:update")
-    @MavenOption("--settings settings.xml")
+    @MavenOption(value = "--settings", parameter= "settings.xml")
     fun jgitProviderIsSet_scmConfigIsSet(result: MavenExecutionResult) {
         val branchList = repo.branchList()
             .setListMode(ListBranchCommand.ListMode.ALL)
