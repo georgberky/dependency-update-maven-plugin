@@ -1,21 +1,42 @@
 package io.github.georgberky.maven.plugins.depsupdate
 
-import com.soebes.itf.jupiter.extension.*
+import com.jcraft.jsch.Session
+import com.soebes.itf.jupiter.extension.MavenGoal
+import com.soebes.itf.jupiter.extension.MavenJupiterExtension
+import com.soebes.itf.jupiter.extension.MavenOption
+import com.soebes.itf.jupiter.extension.MavenProject
+import com.soebes.itf.jupiter.extension.MavenTest
 import com.soebes.itf.jupiter.maven.MavenExecutionResult
 import com.soebes.itf.jupiter.maven.MavenProjectResult
 import org.apache.commons.io.FileUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand
+import org.eclipse.jgit.transport.JschConfigSessionFactory
+import org.eclipse.jgit.transport.OpenSshConfig
+import org.eclipse.jgit.transport.SshTransport
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.io.TempDir
+import org.testcontainers.containers.GenericContainer
+import org.testcontainers.containers.wait.strategy.Wait
+import org.testcontainers.junit.jupiter.Container
+import org.testcontainers.junit.jupiter.Testcontainers
+import org.testcontainers.utility.DockerImageName
 import java.io.File
 import java.util.stream.Collectors.toList
 import com.soebes.itf.extension.assertj.MavenExecutionResultAssert.assertThat as mavenAssertThat
 
+
 @MavenJupiterExtension
-@MavenProject("jgitProviderIsSet_scmConfigIsMissing")
+@MavenProject("jgitProviderIsSet_scmConfigIsSet")
+@Testcontainers
 internal class UpdateMojoJGitIT {
+
+    @Container
+    var gitServer = GenericContainer(DockerImageName.parse("rockstorm/git-server"))
+        .withEnv("GIT_PASSWORD", "12345")
+        .withExposedPorts(22)
+        .waitingFor(Wait.forLogMessage("No user .*", 1))
 
     @TempDir
     lateinit var remoteRepo: File
@@ -24,30 +45,75 @@ internal class UpdateMojoJGitIT {
 
     @BeforeEach
     internal fun setUp(result: MavenProjectResult) {
-        FileUtils.copyDirectory(result.targetProjectDirectory, remoteRepo)
+        gitServer.execInContainer("mkdir", "-p", "/srv/git/jgit-test.git")
+        gitServer.execInContainer("git","init", "--bare", "/srv/git/jgit-test.git")
+        gitServer.execInContainer("chown","-R", "git:git", "/srv")
+        val gitPort = gitServer.getMappedPort(22)
 
-        repo = Git.init().setDirectory(remoteRepo).call()
-        repo.add().addFilepattern(".").call();
-        repo.commit()
+        val sshSessionFactory = object: JschConfigSessionFactory() {
+            override fun configure(host: OpenSshConfig.Host?, session: Session?) {
+                session?.setPassword("12345")
+                session?.setConfig("StrictHostKeyChecking", "no")
+            }
+        }
+
+        val uri = "ssh://git@localhost:${gitPort}/srv/git/jgit-test.git"
+        //Todo replace scm connection in pom.xml
+        val remoteRepoGit = Git.cloneRepository()
+            .setURI(uri)
+            .setDirectory(remoteRepo)
+            .setTransportConfigCallback { transport ->
+                val sshTransport = transport as SshTransport
+                sshTransport.sshSessionFactory = sshSessionFactory
+            }
+            .call()
+
+        FileUtils.copyDirectory(result.targetProjectDirectory, remoteRepo)
+        remoteRepoGit.add().addFilepattern(".").call()
+        remoteRepoGit.commit()
             .setAuthor("Schorsch", "georg@email.com")
             .setMessage("Initial commit.")
             .call()
+        remoteRepoGit
+            .push()
+            .setTransportConfigCallback{ transport ->
+                val sshTransport = transport as SshTransport
+                sshTransport.sshSessionFactory = sshSessionFactory
+            }.call()
 
         FileUtils.deleteDirectory(result.targetProjectDirectory)
 
+
         repo = Git.cloneRepository()
-            .setURI(remoteRepo.toURI().toString())
+            .setURI(uri)
             .setDirectory(result.targetProjectDirectory)
+            .setTransportConfigCallback({ transport ->
+                val sshTransport = transport as SshTransport
+                sshTransport.sshSessionFactory = sshSessionFactory
+             })
             .call()
     }
 
     @MavenTest
     @MavenGoal("\${project.groupId}:\${project.artifactId}:\${project.version}:update")
-    fun jgitProviderIsSet_scmConfigIsMissing(result: MavenExecutionResult) {
+    @MavenOption(value = "--settings", parameter= "settings.xml")
+    fun jgitProviderIsSet_scmConfigIsSet(result: MavenExecutionResult) {
+        val branchList = repo.branchList()
+            .setListMode(ListBranchCommand.ListMode.ALL)
+            .call()
+            .stream()
+            .map { it.name }
+            .collect(toList())
 
         mavenAssertThat(result)
-                .describedAs("the build should have been failed")
-                .isFailure()
+            .describedAs("the build should have been successful")
+            .isSuccessful()
+
+        assertThat(branchList)
+            .describedAs("should create remote feature branches for two dependencies")
+            .filteredOn { it.startsWith("refs/remotes/") }
+            .filteredOn { !it.contains("origin/master") }
+            .hasSize(2)
 
     }
 }
