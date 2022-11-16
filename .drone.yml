@@ -11,6 +11,9 @@ steps:
   - name: mavenjdk8
     pull: if-not-exists
     image: docker.io/maven:3.8.6-eclipse-temurin-8-focal
+    volumes:
+    - name: dockersock
+      path: /var/run
     commands:
       - git config --global user.email "noreply@dependency-plugin.invalid"
       - git config --global user.name "dependency-update-maven-plugin"
@@ -30,3 +33,15 @@ steps:
         from_secret: codecov-token
       files:
         - target/site/jacoco/jacoco.xml
+
+services:
+- name: docker
+  image: docker:dind
+  privileged: true
+  volumes:
+  - name: dockersock
+    path: /var/run
+
+volumes:
+- name: dockersock
+  temp: {}
