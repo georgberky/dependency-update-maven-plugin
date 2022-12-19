@@ -12,7 +12,7 @@ class JGitProviderTest : GitProviderTest() {
         return JGitProvider(localGitDirectoryPath, Settings(), "scm:git:" + remoteGitDirectory.toURI().toString())
     }
 
-    @Test // TODO need a solution for testing push with JGitProvider
+    @Test
     internal fun `push change to remote repository`() {
         val fileToCommit = File(localGitDirectory, "fileToCommit")
         fileToCommit.createNewFile()
@@ -23,6 +23,7 @@ class JGitProviderTest : GitProviderTest() {
 
         val lambda = { providerUnderTest.push("newBranch") }
 
+        // TODO need a solution for testing push with JGitProvider, change to assertThatCode when fixed
         assumeThatCode(lambda).isInstanceOf(TransportException::class.java)
     }
 }
