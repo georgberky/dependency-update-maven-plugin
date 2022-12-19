@@ -28,7 +28,7 @@ import com.soebes.itf.extension.assertj.MavenExecutionResultAssert.assertThat as
 
 @MavenJupiterExtension
 @MavenProject("jgitProviderIsSet_scmConfigIsSet")
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 internal class UpdateMojoJGitIT {
 
     @Container
