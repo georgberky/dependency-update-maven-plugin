@@ -70,7 +70,7 @@
         <kotlin.version>1.6.0</kotlin.version>
         <maven-plugin.version>3.6.0</maven-plugin.version>
         <dokka.version>1.7.10</dokka.version>
-        <itf.version>0.10.0</itf.version>
+        <itf.version>0.11.0</itf.version>
         <spotless.version>2.27.1</spotless.version>
         <ktlint.version>0.47.1</ktlint.version>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -176,7 +176,29 @@
             <version>1.7.5</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>1.16.3</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <testResources>
