@@ -49,12 +49,7 @@ internal class UpdateMojoJGitIT {
         gitServer.execInContainer("chown", "-R", "git:git", "/srv")
         val gitPort = gitServer.getMappedPort(22)
 
-        val sshSessionFactory = object : JschConfigSessionFactory() {
-            override fun configure(host: OpenSshConfig.Host?, session: Session?) {
-                session?.setPassword("12345")
-                session?.setConfig("StrictHostKeyChecking", "no")
-            }
-        }
+        val sshSessionFactory = NoStrictHostKeyCheckingSessionFactory("12345")
 
         val uri = "ssh://git@localhost:$gitPort/srv/git/jgit-test.git"
         // Todo replace scm connection in pom.xml

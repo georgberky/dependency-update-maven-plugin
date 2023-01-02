@@ -78,12 +78,7 @@ class JGitProvider(localRepositoryPath: Path, val settings: Settings, val connec
                                 if (transport !is SshTransport) return@TransportConfigCallback
                                 val (_, password) = usernamePassword(uri)
                                 if (password != null) {
-                                    transport.sshSessionFactory = object : JschConfigSessionFactory() {
-                                        override fun configure(hc: OpenSshConfig.Host?, session: Session?) {
-                                            session?.setPassword(password)
-                                            session?.setConfig("StrictHostKeyChecking", "no")
-                                        }
-                                    }
+                                    transport.sshSessionFactory = NoStrictHostKeyCheckingSessionFactory(password)
                                 } else {
                                     transport.sshSessionFactory = object : JschConfigSessionFactory() {
                                         override fun configure(hc: OpenSshConfig.Host?, session: Session?) {
