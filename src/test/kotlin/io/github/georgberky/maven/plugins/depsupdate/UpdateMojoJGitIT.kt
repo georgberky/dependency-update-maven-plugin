@@ -12,9 +12,9 @@ import org.apache.commons.io.FileUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand
-import org.eclipse.jgit.transport.JschConfigSessionFactory
-import org.eclipse.jgit.transport.OpenSshConfig
 import org.eclipse.jgit.transport.SshTransport
+import org.eclipse.jgit.transport.ssh.jsch.JschConfigSessionFactory
+import org.eclipse.jgit.transport.ssh.jsch.OpenSshConfig
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.io.TempDir
 import org.testcontainers.containers.GenericContainer
@@ -56,10 +56,9 @@ internal class UpdateMojoJGitIT {
             }
         }
 
-        val uri = "ssh://git@localhost:$gitPort/srv/git/jgit-test.git"
-        // Todo replace scm connection in pom.xml
+        // TODO: replace scm connection in pom.xml
         val remoteRepoGit = Git.cloneRepository()
-            .setURI(uri)
+            .setURI("ssh://git@localhost:$gitPort/srv/git/jgit-test.git")
             .setDirectory(remoteRepo)
             .setTransportConfigCallback { transport ->
                 val sshTransport = transport as SshTransport
@@ -73,8 +72,7 @@ internal class UpdateMojoJGitIT {
             .setAuthor("Schorsch", "georg@email.com")
             .setMessage("Initial commit.")
             .call()
-        remoteRepoGit
-            .push()
+        remoteRepoGit.push()
             .setTransportConfigCallback { transport ->
                 val sshTransport = transport as SshTransport
                 sshTransport.sshSessionFactory = sshSessionFactory
@@ -83,8 +81,9 @@ internal class UpdateMojoJGitIT {
         FileUtils.deleteDirectory(result.targetProjectDirectory)
 
         repo = Git.cloneRepository()
-            .setURI(uri)
+            .setURI("ssh://git@localhost:$gitPort/srv/git/jgit-test.git")
             .setDirectory(result.targetProjectDirectory)
+            .setBranch("main")
             .setTransportConfigCallback({ transport ->
                 val sshTransport = transport as SshTransport
                 sshTransport.sshSessionFactory = sshSessionFactory
@@ -110,7 +109,7 @@ internal class UpdateMojoJGitIT {
         assertThat(branchList)
             .describedAs("should create remote feature branches for two dependencies")
             .filteredOn { it.startsWith("refs/remotes/") }
-            .filteredOn { !it.contains("origin/master") }
+            .filteredOn { !it.contains("origin/main") }
             .hasSize(2)
     }
 }
