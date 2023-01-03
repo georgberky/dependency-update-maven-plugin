@@ -60,7 +60,7 @@ internal class Bug37NewBranchFromMasterIT {
             .map { it.name }
             .toList()
 
-        assertThat(branchesWithPreviousCommit).contains("refs/heads/master")
+        assertThat(branchesWithPreviousCommit).contains("refs/heads/main")
     }
 
     @MavenTest
@@ -84,7 +84,7 @@ internal class Bug37NewBranchFromMasterIT {
                 .map { it.name }
                 .toList()
 
-            assertThat(branchesWithPreviousCommit).contains("refs/heads/master")
+            assertThat(branchesWithPreviousCommit).contains("refs/heads/main")
         }
     }
 }

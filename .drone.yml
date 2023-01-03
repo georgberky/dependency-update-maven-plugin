@@ -1,6 +1,6 @@
 ---
 kind: pipeline
-name: linux-pipeline-jdk8
+name: linux-pipeline-jdk11
 type: docker
 
 platform:
@@ -8,9 +8,9 @@ platform:
   arch: amd64
 
 steps:
-  - name: mavenjdk8
+  - name: mavenjdk11
     pull: if-not-exists
-    image: docker.io/maven:3.8.6-eclipse-temurin-8-focal
+    image: docker.io/maven:3.8.6-eclipse-temurin-11-focal
     commands:
       - git config --global user.email "noreply@dependency-plugin.invalid"
       - git config --global user.name "dependency-update-maven-plugin"

@@ -65,7 +65,7 @@ internal class UpdateMojoIT {
         assertThat(branchList)
             .describedAs("should create remote feature branches for two dependencies")
             .filteredOn { it.startsWith("refs/remotes/") }
-            .filteredOn { !it.contains("origin/master") }
+            .filteredOn { !it.contains("origin/main") }
             .hasSize(2)
 
         assertThat(branchList)
