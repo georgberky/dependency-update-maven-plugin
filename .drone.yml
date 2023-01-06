@@ -15,8 +15,9 @@ steps:
       - git config --global user.email "noreply@dependency-plugin.invalid"
       - git config --global user.name "dependency-update-maven-plugin"
       - |
-        mvn \
+        ./mvnw \
           --show-version \
+          --errors \
           --fail-at-end \
           --batch-mode \
           --no-transfer-progress \
