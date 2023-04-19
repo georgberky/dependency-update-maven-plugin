@@ -24,6 +24,7 @@ jobs:
         run: |
           git config --global user.email "noreply@dependency-plugin.invalid"
           git config --global user.name "dependency-update-maven-plugin"
+          git config --global init.defaultBranch main
           mvn \
           --show-version \
           --fail-at-end \
