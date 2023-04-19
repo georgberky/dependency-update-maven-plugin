@@ -32,7 +32,7 @@ import com.soebes.itf.extension.assertj.MavenExecutionResultAssert.assertThat as
 internal class UpdateMojoJGitIT {
 
     @Container
-    var gitServer = GenericContainer(DockerImageName.parse("rockstorm/git-server"))
+    var gitServer = GenericContainer(DockerImageName.parse("rockstorm/git-server:2.38"))
         .withEnv("GIT_PASSWORD", "12345")
         .withExposedPorts(22)
         .waitingFor(Wait.forLogMessage("No user .*", 1))
