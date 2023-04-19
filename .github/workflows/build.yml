@@ -1,0 +1,34 @@
+name: MavenBuild
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  jdk:
+    name: "JDK 11 Eclipse Temurin"
+    runs-on: ubuntu-latest
+    container: "maven:3.8.6-eclipse-temurin-11-focal"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: maven-jdk11-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-jdk11
+      - name: 'Build'
+        run: |
+          git config --global user.email "noreply@dependency-plugin.invalid"
+          git config --global user.name "dependency-update-maven-plugin"
+          mvn \
+          --show-version \
+          --fail-at-end \
+          --batch-mode \
+          --no-transfer-progress \
+          verify \
+          site site:stage \
+          -Pdocs
