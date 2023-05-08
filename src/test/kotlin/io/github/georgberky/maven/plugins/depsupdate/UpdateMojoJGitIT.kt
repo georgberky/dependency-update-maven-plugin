@@ -45,6 +45,7 @@ internal class UpdateMojoJGitIT {
     @BeforeEach
     internal fun setUp(result: MavenProjectResult) {
         gitServer.execInContainer("mkdir", "-p", "/srv/git/jgit-test.git")
+        gitServer.execInContainer("git", "config", "--global", "init.defaultBranch", "main")
         gitServer.execInContainer("git", "init", "--bare", "/srv/git/jgit-test.git")
         gitServer.execInContainer("chown", "-R", "git:git", "/srv")
 
