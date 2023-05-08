@@ -30,7 +30,7 @@ jobs:
           --fail-at-end \
           --batch-mode \
           --no-transfer-progress \
-          verify \
+          clean verify \
           site site:stage \
           -Pdocs
       - uses: codecov/codecov-action@v3
