@@ -35,7 +35,7 @@ internal class UpdateMojoJGitIT {
     var gitServer = GenericContainer(DockerImageName.parse("rockstorm/git-server:2.38"))
         .withEnv("GIT_PASSWORD", "12345")
         .withExposedPorts(22)
-        .waitingFor(Wait.forLogMessage("No user .*", 1))
+        .waitingFor(Wait.forLogMessage(".*Container configuration completed.*", 1))
 
     @TempDir
     lateinit var remoteRepo: File
@@ -47,6 +47,7 @@ internal class UpdateMojoJGitIT {
         gitServer.execInContainer("mkdir", "-p", "/srv/git/jgit-test.git")
         gitServer.execInContainer("git", "init", "--bare", "/srv/git/jgit-test.git")
         gitServer.execInContainer("chown", "-R", "git:git", "/srv")
+
         val gitPort = gitServer.getMappedPort(22)
 
         val sshSessionFactory = object : JschConfigSessionFactory() {
@@ -72,6 +73,7 @@ internal class UpdateMojoJGitIT {
             .setAuthor("Schorsch", "georg@email.com")
             .setMessage("Initial commit.")
             .call()
+
         remoteRepoGit.push()
             .setTransportConfigCallback { transport ->
                 val sshTransport = transport as SshTransport
