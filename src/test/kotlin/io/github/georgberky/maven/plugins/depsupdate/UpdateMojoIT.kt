@@ -29,7 +29,7 @@ internal class UpdateMojoIT {
     internal fun setUp(result: MavenProjectResult) {
         FileUtils.copyDirectory(result.targetProjectDirectory, remoteRepo)
 
-        repo = Git.init().setDirectory(remoteRepo).call()
+        repo = Git.init().setInitialBranch("main").setDirectory(remoteRepo).call()
         repo.add().addFilepattern(".").call()
         repo.commit()
             .setAuthor("Schorsch", "georg@email.com")
