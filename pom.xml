@@ -75,7 +75,7 @@
         <ktlint.version>0.47.1</ktlint.version>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <jgit.version>6.4.0.202211300538-r</jgit.version>
+        <jgit.version>6.6.1.202309021850-r</jgit.version>
     </properties>
 
     <dependencies>
