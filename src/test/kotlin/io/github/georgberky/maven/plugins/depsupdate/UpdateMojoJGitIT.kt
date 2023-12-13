@@ -32,10 +32,10 @@ import com.soebes.itf.extension.assertj.MavenExecutionResultAssert.assertThat as
 internal class UpdateMojoJGitIT {
 
     @Container
-    var gitServer = GenericContainer(DockerImageName.parse("rockstorm/git-server"))
+    var gitServer = GenericContainer(DockerImageName.parse("rockstorm/git-server:2.38"))
         .withEnv("GIT_PASSWORD", "12345")
         .withExposedPorts(22)
-        .waitingFor(Wait.forLogMessage("No user .*", 1))
+        .waitingFor(Wait.forLogMessage(".*Container configuration completed.*", 1))
 
     @TempDir
     lateinit var remoteRepo: File
@@ -45,9 +45,12 @@ internal class UpdateMojoJGitIT {
     @BeforeEach
     internal fun setUp(result: MavenProjectResult) {
         gitServer.execInContainer("mkdir", "-p", "/srv/git/jgit-test.git")
+        gitServer.execInContainer("git", "config", "--global", "init.defaultBranch", "main")
         gitServer.execInContainer("git", "init", "--bare", "/srv/git/jgit-test.git")
         gitServer.execInContainer("chown", "-R", "git:git", "/srv")
-        val gitPort = gitServer.getMappedPort(22)
+
+        val gitServerHost = gitServer.getHost()
+        val gitServerPort = gitServer.getMappedPort(22)
 
         val sshSessionFactory = object : JschConfigSessionFactory() {
             override fun configure(host: OpenSshConfig.Host?, session: Session?) {
@@ -58,7 +61,7 @@ internal class UpdateMojoJGitIT {
 
         // TODO: replace scm connection in pom.xml
         val remoteRepoGit = Git.cloneRepository()
-            .setURI("ssh://git@localhost:$gitPort/srv/git/jgit-test.git")
+            .setURI("ssh://git@$gitServerHost:$gitServerPort/srv/git/jgit-test.git")
             .setDirectory(remoteRepo)
             .setTransportConfigCallback { transport ->
                 val sshTransport = transport as SshTransport
@@ -72,6 +75,7 @@ internal class UpdateMojoJGitIT {
             .setAuthor("Schorsch", "georg@email.com")
             .setMessage("Initial commit.")
             .call()
+
         remoteRepoGit.push()
             .setTransportConfigCallback { transport ->
                 val sshTransport = transport as SshTransport
@@ -81,7 +85,7 @@ internal class UpdateMojoJGitIT {
         FileUtils.deleteDirectory(result.targetProjectDirectory)
 
         repo = Git.cloneRepository()
-            .setURI("ssh://git@localhost:$gitPort/srv/git/jgit-test.git")
+            .setURI("ssh://git@localhost:$gitServerPort/srv/git/jgit-test.git")
             .setDirectory(result.targetProjectDirectory)
             .setBranch("main")
             .setTransportConfigCallback({ transport ->

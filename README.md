@@ -1,6 +1,6 @@
 # Dependency Update Maven Plugin
 
-[![Build Status](https://cloud.drone.io/api/badges/georgberky/dependency-update-maven-plugin/status.svg)](https://cloud.drone.io/georgberky/dependency-update-maven-plugin) [![codecov](https://codecov.io/gh/georgberky/dependency-update-maven-plugin/branch/master/graph/badge.svg?token=XMHYGY0L3A)](https://codecov.io/gh/georgberky/dependency-update-maven-plugin)
+[![MavenBuild](https://github.com/georgberky/dependency-update-maven-plugin/actions/workflows/build.yml/badge.svg)](https://github.com/georgberky/dependency-update-maven-plugin/actions/workflows/build.yml) [![codecov](https://codecov.io/gh/georgberky/dependency-update-maven-plugin/branch/master/graph/badge.svg?token=XMHYGY0L3A)](https://codecov.io/gh/georgberky/dependency-update-maven-plugin)
 
 The `Dependency Update Maven Plugin` analyzes the dependencies of your Maven project.
 
