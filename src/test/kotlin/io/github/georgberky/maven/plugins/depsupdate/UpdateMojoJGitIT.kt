@@ -47,10 +47,27 @@ internal class UpdateMojoJGitIT {
             }
         }
 
+        prepareRemoteRepo(sshSessionFactory, result)
+
+        FileUtils.deleteDirectory(result.targetProjectDirectory)
+
+        repo = Git.cloneRepository()
+            .setURI(gitServer.getGitRepoURIAsSSH().toString())
+            .setDirectory(result.targetProjectDirectory)
+            .setBranch("main")
+            .setTransportConfigCallback({ transport ->
+                val sshTransport = transport as SshTransport
+                sshTransport.sshSessionFactory = sshSessionFactory
+            })
+            .call()
+    }
+
+    private fun prepareRemoteRepo(sshSessionFactory: JschConfigSessionFactory, result: MavenProjectResult) {
         // TODO: replace scm connection in pom.xml
         val remoteRepoGit = Git.cloneRepository()
             .setURI(gitServer.getGitRepoURIAsSSH().toString())
             .setDirectory(remoteRepo)
+            .setBranch("main")
             .setTransportConfigCallback { transport ->
                 val sshTransport = transport as SshTransport
                 sshTransport.sshSessionFactory = sshSessionFactory
@@ -69,18 +86,6 @@ internal class UpdateMojoJGitIT {
                 val sshTransport = transport as SshTransport
                 sshTransport.sshSessionFactory = sshSessionFactory
             }.call()
-
-        FileUtils.deleteDirectory(result.targetProjectDirectory)
-
-        repo = Git.cloneRepository()
-            .setURI(gitServer.getGitRepoURIAsSSH().toString())
-            .setDirectory(result.targetProjectDirectory)
-            .setBranch("main")
-            .setTransportConfigCallback({ transport ->
-                val sshTransport = transport as SshTransport
-                sshTransport.sshSessionFactory = sshSessionFactory
-            })
-            .call()
     }
 
     @MavenTest
