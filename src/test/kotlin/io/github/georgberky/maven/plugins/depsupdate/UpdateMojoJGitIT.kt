@@ -1,5 +1,6 @@
 package io.github.georgberky.maven.plugins.depsupdate
 
+import com.github.sparsick.testcontainers.gitserver.GitServerContainer
 import com.jcraft.jsch.Session
 import com.soebes.itf.jupiter.extension.MavenGoal
 import com.soebes.itf.jupiter.extension.MavenJupiterExtension
@@ -17,8 +18,6 @@ import org.eclipse.jgit.transport.ssh.jsch.JschConfigSessionFactory
 import org.eclipse.jgit.transport.ssh.jsch.OpenSshConfig
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.io.TempDir
-import org.testcontainers.containers.GenericContainer
-import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
@@ -32,10 +31,7 @@ import com.soebes.itf.extension.assertj.MavenExecutionResultAssert.assertThat as
 internal class UpdateMojoJGitIT {
 
     @Container
-    var gitServer = GenericContainer(DockerImageName.parse("rockstorm/git-server:2.38"))
-        .withEnv("GIT_PASSWORD", "12345")
-        .withExposedPorts(22)
-        .waitingFor(Wait.forLogMessage(".*Container configuration completed.*", 1))
+    private val gitServer = GitServerContainer(DockerImageName.parse("rockstorm/git-server:2.40"))
 
     @TempDir
     lateinit var remoteRepo: File
@@ -44,14 +40,6 @@ internal class UpdateMojoJGitIT {
 
     @BeforeEach
     internal fun setUp(result: MavenProjectResult) {
-        gitServer.execInContainer("mkdir", "-p", "/srv/git/jgit-test.git")
-        gitServer.execInContainer("git", "config", "--global", "init.defaultBranch", "main")
-        gitServer.execInContainer("git", "init", "--bare", "/srv/git/jgit-test.git")
-        gitServer.execInContainer("chown", "-R", "git:git", "/srv")
-
-        val gitServerHost = gitServer.getHost()
-        val gitServerPort = gitServer.getMappedPort(22)
-
         val sshSessionFactory = object : JschConfigSessionFactory() {
             override fun configure(host: OpenSshConfig.Host?, session: Session?) {
                 session?.setPassword("12345")
@@ -61,7 +49,7 @@ internal class UpdateMojoJGitIT {
 
         // TODO: replace scm connection in pom.xml
         val remoteRepoGit = Git.cloneRepository()
-            .setURI("ssh://git@$gitServerHost:$gitServerPort/srv/git/jgit-test.git")
+            .setURI(gitServer.getGitRepoURIAsSSH().toString())
             .setDirectory(remoteRepo)
             .setTransportConfigCallback { transport ->
                 val sshTransport = transport as SshTransport
@@ -85,7 +73,7 @@ internal class UpdateMojoJGitIT {
         FileUtils.deleteDirectory(result.targetProjectDirectory)
 
         repo = Git.cloneRepository()
-            .setURI("ssh://git@localhost:$gitServerPort/srv/git/jgit-test.git")
+            .setURI(gitServer.getGitRepoURIAsSSH().toString())
             .setDirectory(result.targetProjectDirectory)
             .setBranch("main")
             .setTransportConfigCallback({ transport ->
