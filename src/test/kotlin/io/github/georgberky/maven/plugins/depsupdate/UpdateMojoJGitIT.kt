@@ -49,7 +49,8 @@ internal class UpdateMojoJGitIT {
         gitServer.execInContainer("git", "init", "--bare", "/srv/git/jgit-test.git")
         gitServer.execInContainer("chown", "-R", "git:git", "/srv")
 
-        val gitPort = gitServer.getMappedPort(22)
+        val gitServerHost = gitServer.getHost()
+        val gitServerPort = gitServer.getMappedPort(22)
 
         val sshSessionFactory = object : JschConfigSessionFactory() {
             override fun configure(host: OpenSshConfig.Host?, session: Session?) {
@@ -60,7 +61,7 @@ internal class UpdateMojoJGitIT {
 
         // TODO: replace scm connection in pom.xml
         val remoteRepoGit = Git.cloneRepository()
-            .setURI("ssh://git@localhost:$gitPort/srv/git/jgit-test.git")
+            .setURI("ssh://git@$gitServerHost:$gitServerPort/srv/git/jgit-test.git")
             .setDirectory(remoteRepo)
             .setTransportConfigCallback { transport ->
                 val sshTransport = transport as SshTransport
@@ -84,7 +85,7 @@ internal class UpdateMojoJGitIT {
         FileUtils.deleteDirectory(result.targetProjectDirectory)
 
         repo = Git.cloneRepository()
-            .setURI("ssh://git@localhost:$gitPort/srv/git/jgit-test.git")
+            .setURI("ssh://git@localhost:$gitServerPort/srv/git/jgit-test.git")
             .setDirectory(result.targetProjectDirectory)
             .setBranch("main")
             .setTransportConfigCallback({ transport ->
