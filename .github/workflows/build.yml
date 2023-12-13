@@ -10,16 +10,16 @@ on:
 
 jobs:
   jdk:
-    name: "JDK 11 Eclipse Temurin"
+    name: "JDK 17 Eclipse Temurin"
     runs-on: ubuntu-latest
-    container: "maven:3.8.6-eclipse-temurin-11-focal"
+    container: "maven:3.8.6-eclipse-temurin-17-focal"
     steps:
       - uses: actions/checkout@v2
       - uses: actions/cache@v2
         with:
           path: ~/.m2/repository
-          key: maven-jdk11-${{ hashFiles('**/pom.xml') }}
-          restore-keys: maven-jdk11
+          key: maven-jdk-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-jdk
       - name: 'Build'
         run: |
           git config --global user.email "noreply@dependency-plugin.invalid"
