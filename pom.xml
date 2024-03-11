@@ -78,6 +78,10 @@
         <jgit.version>6.4.0.202211300538-r</jgit.version>
     </properties>
 
+    <prerequisites>
+      <maven>${maven.version}</maven>
+    </prerequisites>
+
     <dependencies>
         <dependency>
             <groupId>commons-io</groupId>
